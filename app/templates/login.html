@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+    <title>Login</title>
+</head>
+<body>
+    {% extends "base.html" %}
+
+    {% block content %}
+    <div class="container">
+        <h2>Login</h2>
+        <form id="login" method="post" action="{{ url_for('main.login') }}"></form>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <form id="loginForm" method="post" action="{{ url_for('login') }}">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                {{ form.username.label }} {{ form.username(class="form-control", id="username") }}
+                {% if form.username.errors %}
+                    {% for error in form.username.errors %}
+                        <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.password.label }} {{ form.password(class="form-control", id="password") }}
+                {% if form.password.errors %}
+                    {% for error in form.password.errors %}
+                        <span class="error-message">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.remember_me() }} {{ form.remember_me.label }}
+            </div>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </form>
+        <div class="auth-links">
+            <p>New user? <a href="{{ url_for('register') }}">Register here</a></p>
+        </div>
+    </div>
+    {% endblock %}
+
+    <script>
+    document.getElementById("loginForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        let username = document.getElementById("username").value;
+        let password = document.getElementById("password").value;
+        const web_usr_name = "admin@123";
+        const web_pw = "123456";
+
+        if (username === web_usr_name && password === web_pw) {
+            window.location.href = "{{ url_for('main.index') }}";
+        } else {
+            alert("Invalid username or password");
+        }
+    });
+    </script>
+</body>
+</html>

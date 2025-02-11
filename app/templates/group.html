@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <title>{{ group.name }}</title>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-graduation-cap"></i>
+            <a href="{{ url_for('main.dashboard') }}">Study Group</a>
+        </div>
+        <div class="nav-links">
+            <span class="user-welcome">Welcome, {{ current_user.username }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Logout</a>
+        </div>
+    </nav>
+
+    <div class="group-container">
+        <div class="group-header">
+            <h2>{{ group.name }}</h2>
+            <p class="group-description">{{ group.description }}</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="resources-section">
+            <h3>Resources</h3>
+            <div class="resources-grid">
+                {% for resource in resources %}
+                <div class="resource-card">
+                    <h4>{{ resource.name }}</h4>
+                    <p class="resource-type">Type: {{ resource.type }}</p>
+                    <p class="resource-content">{{ resource.content }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="add-resource">
+                <a href="{{ url_for('main.add_resource', group_id=group.id) }}" class="btn btn-primary">Add Resource</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
