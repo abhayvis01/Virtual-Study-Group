@@ -1,0 +1,9 @@
+connectorId: example
+generate:
+  javascriptSdk:
+    - outputDir: ..\..\Virtual-Study-Group-main\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..\Virtual-Study-Group-main
+      react: false
+      angular: false
+      clientCache: {}

@@ -1,0 +1,123 @@
+mutation CreateUser($username: String!, $email: String!, $totalHours: Float!) @auth(level: USER) {
+  user_insert(data: { id_expr: "auth.uid", username: $username, email: $email, totalHours: $totalHours, streakCount: 0 })
+}
+
+mutation UpdateUser($username: String) @auth(level: USER) {
+  user_update(key: { id_expr: "auth.uid" }, data: { username: $username })
+}
+
+mutation DeleteUser @auth(level: USER) {
+  user_delete(key: { id_expr: "auth.uid" })
+}
+
+query GetUser @auth(level: USER) {
+  user(key: { id_expr: "auth.uid" }) { username email totalHours }
+}
+
+query ListUsers @auth(level: PUBLIC, insecureReason: "Public list of users") {
+  users { username totalHours }
+}
+
+mutation CreateStudyGroup($name: String!, $description: String) @auth(level: USER) {
+  studyGroup_insert(data: { name: $name, description: $description, creatorId_expr: "auth.uid", createdAt_expr: "request.time" })
+}
+
+mutation UpdateStudyGroup($id: UUID!, $name: String) @auth(level: USER) {
+  studyGroup_update(key: { id: $id }, data: { name: $name })
+}
+
+mutation DeleteStudyGroup($id: UUID!) @auth(level: USER) {
+  studyGroup_delete(key: { id: $id })
+}
+
+query GetStudyGroup($id: UUID!) @auth(level: PUBLIC, insecureReason: "Publicly visible study groups") {
+  studyGroup(key: { id: $id }) { name description }
+}
+
+query ListStudyGroups @auth(level: PUBLIC, insecureReason: "Public list of groups") {
+  studyGroups { name }
+}
+
+mutation JoinGroup($groupId: UUID!) @auth(level: USER) {
+  groupMember_insert(data: { userId_expr: "auth.uid", groupId: $groupId })
+}
+
+mutation LeaveGroup($groupId: UUID!) @auth(level: USER) {
+  groupMember_delete(key: { userId_expr: "auth.uid", groupId: $groupId })
+}
+
+query ListGroupMembers($groupId: UUID!) @auth(level: PUBLIC, insecureReason: "Public view of members") {
+  groupMembers(where: { groupId: { eq: $groupId } }) { user { username } }
+}
+
+mutation CreateResource($groupId: UUID!, $title: String!, $fileUrl: String!, $type: String!) @auth(level: USER) {
+  resource_insert(data: { groupId: $groupId, ownerId_expr: "auth.uid", title: $title, fileUrl: $fileUrl, type: $type, createdAt_expr: "request.time" })
+}
+
+mutation UpdateResource($id: UUID!, $title: String) @auth(level: USER) {
+  resource_update(key: { id: $id }, data: { title: $title })
+}
+
+mutation DeleteResource($id: UUID!) @auth(level: USER) {
+  resource_delete(key: { id: $id })
+}
+
+query GetResource($id: UUID!) @auth(level: PUBLIC, insecureReason: "Publicly accessible resources") {
+  resource(key: { id: $id }) { title fileUrl }
+}
+
+query ListResources($groupId: UUID!) @auth(level: PUBLIC, insecureReason: "Public list of resources") {
+  resources(where: { groupId: { eq: $groupId } }) { title type }
+}
+
+mutation CreateSession($duration: Int!, $topic: String) @auth(level: USER) {
+  session_insert(data: { userId_expr: "auth.uid", durationMinutes: $duration, topic: $topic, startTime_expr: "request.time" })
+}
+
+mutation UpdateSession($id: UUID!, $topic: String) @auth(level: USER) {
+  session_update(key: { id: $id }, data: { topic: $topic })
+}
+
+mutation DeleteSession($id: UUID!) @auth(level: USER) {
+  session_delete(key: { id: $id })
+}
+
+query GetSession($id: UUID!) @auth(level: USER) {
+  session(key: { id: $id }) { topic durationMinutes }
+}
+
+query ListMySessions @auth(level: USER) {
+  sessions(where: { userId: { eq_expr: "auth.uid" } }) { topic durationMinutes }
+}
+
+mutation CreateVideoCall($groupId: UUID!, $isActive: Boolean!) @auth(level: USER) {
+  videoCall_insert(data: { groupId: $groupId, hostId_expr: "auth.uid", isActive: $isActive, startTime_expr: "request.time" })
+}
+
+mutation UpdateVideoCall($id: UUID!, $isActive: Boolean) @auth(level: USER) {
+  videoCall_update(key: { id: $id }, data: { isActive: $isActive })
+}
+
+mutation DeleteVideoCall($id: UUID!) @auth(level: USER) {
+  videoCall_delete(key: { id: $id })
+}
+
+query GetVideoCall($id: UUID!) @auth(level: PUBLIC, insecureReason: "Public video call status") {
+  videoCall(key: { id: $id }) { isActive startTime }
+}
+
+query ListVideoCalls($groupId: UUID!) @auth(level: PUBLIC, insecureReason: "Public list of calls") {
+  videoCalls(where: { groupId: { eq: $groupId } }) { isActive }
+}
+
+mutation JoinCall($callId: UUID!) @auth(level: USER) {
+  callParticipant_insert(data: { callId: $callId, userId_expr: "auth.uid", joinedAt_expr: "request.time" })
+}
+
+mutation LeaveCall($callId: UUID!) @auth(level: USER) {
+  callParticipant_delete(key: { callId: $callId, userId_expr: "auth.uid" })
+}
+
+query ListCallParticipants($callId: UUID!) @auth(level: PUBLIC, insecureReason: "Public participant list") {
+  callParticipants(where: { callId: { eq: $callId } }) { user { username } }
+}

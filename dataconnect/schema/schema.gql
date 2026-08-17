@@ -1,0 +1,53 @@
+type User @table {
+  username: String!
+  email: String!
+  streakCount: Int!
+  totalHours: Float!
+  avatarUrl: String
+  bio: String
+}
+
+type StudyGroup @table {
+  name: String!
+  creator: User!
+  description: String
+  createdAt: Timestamp!
+}
+
+# Represents membership in a group (Many-to-Many resolution)
+type GroupMember @table(key: ["user", "group"]) {
+  user: User!
+  group: StudyGroup!
+}
+
+type Resource @table {
+  group: StudyGroup!
+  owner: User!
+  title: String!
+  fileUrl: String!
+  type: String!
+  description: String
+  createdAt: Timestamp!
+}
+
+type Session @table {
+  user: User!
+  startTime: Timestamp!
+  durationMinutes: Int!
+  topic: String
+  notes: String
+}
+
+type VideoCall @table {
+  group: StudyGroup!
+  host: User!
+  isActive: Boolean!
+  startTime: Timestamp
+}
+
+# Tracks participants in a specific video call
+type CallParticipant @table(key: ["call", "user"]) {
+  call: VideoCall!
+  user: User!
+  joinedAt: Timestamp!
+}

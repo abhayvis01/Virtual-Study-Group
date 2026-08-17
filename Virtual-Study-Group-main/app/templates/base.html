@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Virtual Study Group{% endblock %} - Collaborative Learning</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Firebase JS SDK (Compat mode for seamless web integration) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <a href="{{ url_for('main.index') }}" class="nav-brand">
+      <i class="fa-solid fa-graduation-cap"></i> VirtualStudyGroup
+    </a>
+
+    <!-- Universal Search Input -->
+    <div style="position: relative; max-width: 340px; width: 100%; margin: 0 1.5rem;">
+      <input type="text" id="globalSearchInput" class="form-control" placeholder="Search rooms, notes, topics..." style="padding-left: 2.3rem; height: 38px; font-size: 0.85rem; border-radius: 20px;" oninput="performGlobalSearch()">
+      <i class="fa-solid fa-search" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.85rem;"></i>
+      <div id="searchResultsDropdown" style="display: none; position: absolute; top: 45px; left: 0; width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-main); z-index: 1000; padding: 0.5rem; max-height: 250px; overflow-y: auto;"></div>
+    </div>
+
+    <ul class="nav-links">
+      {% if current_user.is_authenticated %}
+        <li><a href="{{ url_for('main.dashboard') }}" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
+        <li><a href="{{ url_for('groups.create_group') }}" class="nav-link"><i class="fa-solid fa-plus-circle"></i> Create Room</a></li>
+        
+        <!-- Live Streak & XP Badge -->
+        <li>
+          <span class="badge-streak">
+            🔥 {{ current_user.streak_count or 1 }} Day Streak &nbsp;|&nbsp; ⚡ {{ current_user.xp_points or 50 }} XP
+          </span>
+        </li>
+
+        <li>
+          <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-user-circle" style="font-size: 1.1rem; color: var(--accent-primary);"></i> {{ current_user.username }}
+          </span>
+        </li>
+        <li><a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-sign-out-alt"></i> Logout</a></li>
+      {% else %}
+        <li><a href="{{ url_for('auth.login') }}" class="nav-link">Login</a></li>
+        <li><a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Get Started</a></li>
+      {% endif %}
+
+      <li>
+        <button id="themeToggle" class="theme-toggle">
+          <i class="fa-solid fa-moon"></i> Theme
+        </button>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Content Body -->
+  <main class="main-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+              <span><i class="fa-solid fa-info-circle"></i> {{ message }}</span>
+              <button onclick="this.parentElement.remove()" style="background:none; border:none; color:inherit; cursor:pointer;"><i class="fa-solid fa-times"></i></button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2026 Virtual Study Group Platform. All Rights Reserved. • <a href="{{ url_for('main.terms') }}" style="color: var(--text-secondary); text-decoration: underline;">Terms & Conditions</a></p>
+  </footer>
+
+  <script>
+    // Initialize Firebase Web SDK
+    const firebaseConfig = {{ firebase_config | tojson }};
+    if (firebaseConfig && firebaseConfig.apiKey) {
+      firebase.initializeApp(firebaseConfig);
+      if (firebase.analytics) {
+        firebase.analytics();
+      }
+    }
+
+    // Universal Search JS
+    let searchTimeout = null;
+    function performGlobalSearch() {
+      const q = document.getElementById('globalSearchInput').value.trim();
+      const drop = document.getElementById('searchResultsDropdown');
+      if (!q) { drop.style.display = 'none'; return; }
+
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        fetch('/api/search?q=' + encodeURIComponent(q))
+          .then(r => r.json())
+          .then(res => {
+            if (res.status === 'success') {
+              const groups = res.results.groups || [];
+              const resources = res.results.resources || [];
+              if (groups.length === 0 && resources.length === 0) {
+                drop.innerHTML = '<div style="padding:0.5rem; color:var(--text-secondary); font-size:0.85rem;">No matches found</div>';
+              } else {
+                drop.innerHTML = groups.map(g => `
+                  <a href="/groups/${g._id}" style="display:block; padding:0.4rem; color:var(--text-primary); text-decoration:none; border-bottom:1px solid var(--border-color); font-size:0.85rem;">
+                    <strong>🏫 ${g.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">(${g.category})</span>
+                  </a>
+                `).join('') + resources.map(r => `
+                  <div style="padding:0.4rem; font-size:0.85rem; color:var(--text-secondary);">
+                    📄 ${r.name} <span style="font-size:0.75rem; text-transform:uppercase;">(${r.type})</span>
+                  </div>
+                `).join('');
+              }
+              drop.style.display = 'block';
+            }
+          });
+      }, 300);
+    }
+
+    // Theme Toggle
+    const themeBtn = document.getElementById('themeToggle');
+    const htmlElem = document.documentElement;
+
+    const savedTheme = localStorage.getItem('vsg_theme') || 'dark';
+    htmlElem.setAttribute('data-theme', savedTheme);
+    updateThemeBtnIcon(savedTheme);
+
+    themeBtn.addEventListener('click', () => {
+      const currentTheme = htmlElem.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      htmlElem.setAttribute('data-theme', newTheme);
+      localStorage.setItem('vsg_theme', newTheme);
+      updateThemeBtnIcon(newTheme);
+    });
+
+    function updateThemeBtnIcon(theme) {
+      themeBtn.innerHTML = theme === 'dark' 
+        ? '<i class="fa-solid fa-sun"></i> Light' 
+        : '<i class="fa-solid fa-moon"></i> Dark';
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

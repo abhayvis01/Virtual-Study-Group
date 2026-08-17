@@ -1,0 +1,884 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ group.name }} - Study Workspace{% endblock %}
+
+{% block content %}
+<!-- Room Header -->
+<div class="room-header">
+  <div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem;">
+      <h1 style="font-size: 1.8rem; font-weight: 800;">{{ group.name }}</h1>
+      <span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 0.2rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">
+        {{ group.category or 'General' }}
+      </span>
+    </div>
+    <p style="color: var(--text-secondary); font-size: 0.95rem;">{{ group.description }}</p>
+  </div>
+
+  <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+    <div style="background: var(--bg-input); padding: 0.5rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
+      <i class="fa-solid fa-key" style="color: #f59e0b;"></i> Room Code: <span id="codeSpan">{{ group.room_code }}</span>
+      <button onclick="navigator.clipboard.writeText('{{ group.room_code }}'); alert('Room Code Copied!');" style="background: none; border: none; color: var(--accent-primary); cursor: pointer; margin-left: 0.5rem;"><i class="fa-solid fa-copy"></i></button>
+    </div>
+    <a href="{{ url_for('resources.add_resource', group_id=group['_id']) }}" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-cloud-arrow-up"></i> Add Resource
+    </a>
+    {% if group.created_by|string == current_user.id|string %}
+      <form action="{{ url_for('groups.delete_group', group_id=group['_id']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this study room? This action cannot be undone.');" style="display: inline;">
+        <button type="submit" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+          <i class="fa-solid fa-trash"></i> Delete Room
+        </button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Tabs Navigation -->
+<div class="tabs-nav">
+  <button class="tab-btn active" onclick="switchTab('chatTab', this)"><i class="fa-solid fa-comments"></i> Group Chat</button>
+  <button class="tab-btn" onclick="switchTab('videoTab', this)"><i class="fa-solid fa-video"></i> Video Meeting</button>
+  <button class="tab-btn" onclick="switchTab('voiceTab', this)"><i class="fa-solid fa-microphone"></i> Audio Lounge</button>
+  <button class="tab-btn" onclick="switchTab('whiteboardTab', this)"><i class="fa-solid fa-paintbrush"></i> Whiteboard</button>
+  <button class="tab-btn" onclick="switchTab('codeTab', this)"><i class="fa-solid fa-code"></i> Code Playground</button>
+  <button class="tab-btn" onclick="switchTab('calendarTab', this)"><i class="fa-solid fa-calendar-alt"></i> Calendar & Deadlines</button>
+  <button class="tab-btn" onclick="switchTab('pollsTab', this)"><i class="fa-solid fa-square-poll-vertical"></i> Room Polls</button>
+  <button class="tab-btn" onclick="switchTab('tasksTab', this)"><i class="fa-solid fa-list-check"></i> Study Task Planner</button>
+  <button class="tab-btn" onclick="switchTab('pomodoroTab', this)"><i class="fa-solid fa-stopwatch"></i> Pomodoro & Ambience</button>
+  <button class="tab-btn" onclick="switchTab('resourcesTab', this)"><i class="fa-solid fa-folder-open"></i> Resources ({{ resources|length }})</button>
+  <button class="tab-btn" onclick="switchTab('flashcardsTab', this)"><i class="fa-solid fa-clone"></i> Flashcards</button>
+  <button class="tab-btn" onclick="switchTab('leaderboardTab', this)"><i class="fa-solid fa-trophy"></i> Leaderboard</button>
+  <button class="tab-btn" onclick="switchTab('aiTab', this)"><i class="fa-solid fa-robot"></i> AI Helper</button>
+</div>
+
+<!-- TAB 1: Real-time Group Chat -->
+<div id="chatTab" class="tab-pane active">
+  <div class="chat-container">
+    <div class="chat-messages" id="chatWindow">
+      {% for msg in messages %}
+        <div class="chat-bubble {% if msg.user_id == current_user.id %}mine{% endif %}">
+          <div class="chat-sender">{{ msg.username }} • {{ msg.timestamp }}</div>
+          <div>{{ msg.text }}</div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" class="form-control" placeholder="Type a message to your study group..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+      <button onclick="sendChatMessage()" class="btn btn-primary"><i class="fa-solid fa-paper-plane"></i> Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: Embedded WebRTC Video Meeting -->
+<div id="videoTab" class="tab-pane">
+  <div class="card" style="padding: 1rem; text-align: center;">
+    <div style="margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+      <h3 style="font-weight: 700;"><i class="fa-solid fa-video" style="color: #3b82f6;"></i> Group Video Call & Screen Sharing</h3>
+      <button onclick="initJitsi()" class="btn btn-primary btn-sm"><i class="fa-solid fa-plug"></i> Connect / Refresh Video</button>
+    </div>
+    <div id="jitsiContainer" style="width: 100%; height: 500px; background: #000000; border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center; color: white;">
+      <p><i class="fa-solid fa-spinner fa-spin" style="font-size: 2rem;"></i><br><br>Click "Connect / Refresh Video" to launch WebRTC Call</p>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: Audio Voice Lounge -->
+<div id="voiceTab" class="tab-pane">
+  <div class="card" style="max-width: 500px; margin: 0 auto; text-align: center; padding: 2.5rem;">
+    <div style="background: rgba(16, 185, 129, 0.15); color: #10b981; width: 65px; height: 65px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 1rem;">
+      <i class="fa-solid fa-microphone"></i>
+    </div>
+    <h3 style="font-weight: 800;">Peer Audio Voice Lounge</h3>
+    <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0.5rem 0 1.25rem 0;">Lightweight WebRTC audio channel for voice discussion without video overhead.</p>
+    
+    <div id="audioStatus" style="display: none; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.4rem 0.85rem; border-radius: 20px; font-weight: 700; font-size: 0.85rem; margin-bottom: 1.25rem;">
+      🟢 Connected to Peer Voice Lounge
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; justify-content: center;">
+      <button onclick="initJitsiAudio()" class="btn btn-primary"><i class="fa-solid fa-phone"></i> Join Audio Lounge</button>
+      <button onclick="leaveJitsiAudio()" class="btn btn-secondary"><i class="fa-solid fa-phone-slash"></i> Mute / Leave</button>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: Collaborative Whiteboard -->
+<div id="whiteboardTab" class="tab-pane">
+  <div class="card" style="padding: 1rem;">
+    <div class="canvas-tools">
+      <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Color:</label>
+      <input type="color" id="brushColor" value="#ffffff">
+      <label style="font-weight: 600; font-size: 0.85rem; color: var(--text-secondary);">Brush:</label>
+      <input type="range" id="brushSize" min="2" max="20" value="4" style="width: 80px;">
+      <button onclick="clearWhiteboard()" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eraser"></i> Clear</button>
+      <button onclick="saveWhiteboard()" class="btn btn-primary btn-sm"><i class="fa-solid fa-save"></i> Save Canvas</button>
+    </div>
+    <div class="canvas-wrapper" style="margin-top: 0.75rem;">
+      <canvas id="whiteboardCanvas" width="900" height="450"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 5: Code Playground -->
+<div id="codeTab" class="tab-pane">
+  <div class="card" style="padding: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+      <h3 style="font-weight: 700;"><i class="fa-solid fa-code" style="color: #8b5cf6;"></i> Live Code Playground</h3>
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <select id="codeLang" class="form-control" style="width: 120px; padding: 0.4rem;">
+          <option value="python">Python</option>
+          <option value="javascript">JavaScript</option>
+        </select>
+        <button onclick="executeCode()" class="btn btn-primary btn-sm"><i class="fa-solid fa-play"></i> Run Code</button>
+      </div>
+    </div>
+
+    <textarea id="codeEditor" class="form-control" rows="10" style="font-family: monospace; background: #090d16; color: #a7f3d0; font-size: 0.95rem; line-height: 1.5;" placeholder="# Type your Python or JavaScript code here...
+print('Hello from Virtual Study Group Code Playground!')
+for i in range(1, 4):
+    print(f'Study Goal #{i}: Complete')"></textarea>
+
+    <div style="margin-top: 0.75rem;">
+      <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.25rem;">Console Output:</div>
+      <pre id="codeConsole" style="background: #000; color: #38bdf8; padding: 1rem; border-radius: var(--radius-sm); min-height: 80px; font-family: monospace; font-size: 0.9rem; overflow-x: auto;">Click "Run Code" to execute...</pre>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 6: Calendar & Deadlines -->
+<div id="calendarTab" class="tab-pane">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h3 style="font-weight: 700;">Study Calendar & Exam Deadlines</h3>
+    <button onclick="document.getElementById('eventModal').style.display='flex'" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-plus"></i> Add Event / Exam
+    </button>
+  </div>
+
+  <div class="grid-3" id="calendarEventsGrid">
+    <p style="color: var(--text-secondary);">Loading upcoming study events...</p>
+  </div>
+</div>
+
+<!-- TAB 7: Room Polls -->
+<div id="pollsTab" class="tab-pane">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h3 style="font-weight: 700;">Room Polls & Quick Votes</h3>
+    <button onclick="document.getElementById('pollModal').style.display='flex'" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-plus"></i> Create New Poll
+    </button>
+  </div>
+
+  <div class="grid-2" id="pollsGrid">
+    <p style="color: var(--text-secondary);">Loading room polls...</p>
+  </div>
+</div>
+
+<!-- TAB 8: Study Task Planner -->
+<div id="tasksTab" class="tab-pane">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h3 style="font-weight: 700;"><i class="fa-solid fa-list-check" style="color: #f59e0b;"></i> Study Task Planner</h3>
+    <div style="display: flex; gap: 0.5rem;">
+      <input type="text" id="newTaskInput" class="form-control" placeholder="New Task Title..." style="width: 250px;">
+      <button onclick="addNewTask()" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add Task</button>
+    </div>
+  </div>
+
+  <div class="kanban-board">
+    <div class="kanban-col">
+      <h4 style="font-weight: 700; color: #f59e0b; margin-bottom: 0.75rem;"><i class="fa-solid fa-circle"></i> To Do</h4>
+      <div id="colTodo">
+        {% for t in tasks if t.status == 'todo' %}
+          <div class="kanban-card" id="task-card-{{ t._id }}">
+            <div style="font-weight: 600;">{{ t.title }}</div>
+            <button onclick="moveTask('{{ t._id }}', 'in_progress')" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem; width: 100%;">Start <i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="kanban-col">
+      <h4 style="font-weight: 700; color: #3b82f6; margin-bottom: 0.75rem;"><i class="fa-solid fa-spinner"></i> In Progress</h4>
+      <div id="colInProgress">
+        {% for t in tasks if t.status == 'in_progress' %}
+          <div class="kanban-card" id="task-card-{{ t._id }}">
+            <div style="font-weight: 600;">{{ t.title }}</div>
+            <button onclick="moveTask('{{ t._id }}', 'done')" class="btn btn-primary btn-sm" style="margin-top: 0.5rem; width: 100%;">Complete ✅</button>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="kanban-col">
+      <h4 style="font-weight: 700; color: #10b981; margin-bottom: 0.75rem;"><i class="fa-solid fa-check-circle"></i> Completed</h4>
+      <div id="colDone">
+        {% for t in tasks if t.status == 'done' %}
+          <div class="kanban-card" id="task-card-{{ t._id }}" style="opacity: 0.7;">
+            <div style="font-weight: 600; text-decoration: line-through;">{{ t.title }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 9: Pomodoro & Ambience -->
+<div id="pomodoroTab" class="tab-pane">
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+    <div class="card" style="text-align: center; padding: 2rem;">
+      <h3 style="font-weight: 800; margin-bottom: 0.5rem;"><i class="fa-solid fa-stopwatch" style="color: #ef4444;"></i> Focus Session</h3>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Tracked & Logged to MongoDB Atlas</p>
+
+      <div id="timerDisplay" style="font-size: 3.5rem; font-weight: 800; font-family: monospace; color: var(--accent-primary); margin-bottom: 1.25rem;">
+        25:00
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; justify-content: center;">
+        <button id="startTimerBtn" onclick="toggleTimer()" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start</button>
+        <button onclick="resetTimer()" class="btn btn-secondary"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+      </div>
+    </div>
+
+    <div class="card" style="padding: 2rem;">
+      <h3 style="font-weight: 800; margin-bottom: 0.5rem;"><i class="fa-solid fa-music" style="color: #10b981;"></i> Study Ambience</h3>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1.25rem;">Background Focus Soundscapes</p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <button onclick="playAmbience('rain')" class="btn btn-secondary" style="justify-content: space-between;">
+          <span>🌧️ Soft Rain</span> <i class="fa-solid fa-volume-high"></i>
+        </button>
+        <button onclick="playAmbience('lofi')" class="btn btn-secondary" style="justify-content: space-between;">
+          <span>🎧 Lofi Focus Beats</span> <i class="fa-solid fa-headphones"></i>
+        </button>
+        <button onclick="playAmbience('forest')" class="btn btn-secondary" style="justify-content: space-between;">
+          <span>🌲 Forest Waves</span> <i class="fa-solid fa-tree"></i>
+        </button>
+        <button onclick="stopAmbience()" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); margin-top: 0.5rem;">
+          <i class="fa-solid fa-volume-xmark"></i> Stop Audio
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 10: Resources -->
+<div id="resourcesTab" class="tab-pane">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h3 style="font-weight: 700;">Study Resources & Files</h3>
+    <a href="{{ url_for('resources.add_resource', group_id=group['_id']) }}" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-plus"></i> Upload New Resource
+    </a>
+  </div>
+
+  {% if resources %}
+    <div class="grid-3">
+      {% for r in resources %}
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+            <h4 style="font-weight: 700; font-size: 1.05rem;">{{ r.name }}</h4>
+            <span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 0.15rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">
+              {{ r.type }}
+            </span>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">{{ r.content }}</p>
+          {% if r.file_url %}
+            <a href="{{ r.file_url }}" target="_blank" class="btn btn-secondary btn-sm" style="width: 100%;">
+              <i class="fa-solid fa-download"></i> View / Download File
+            </a>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 2rem;">
+      <p style="color: var(--text-secondary);">No resources uploaded to this group yet.</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- TAB 11: Flashcards -->
+<div id="flashcardsTab" class="tab-pane">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h3 style="font-weight: 700;">Study Flashcards Decks</h3>
+    <button onclick="document.getElementById('cardModal').style.display='flex'" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-plus"></i> Add Flashcard
+    </button>
+  </div>
+
+  <div class="grid-3" id="cardsGrid">
+    {% for f in flashcards %}
+      <div class="card" style="perspective: 1000px; cursor: pointer;" onclick="this.querySelector('.card-inner').classList.toggle('flipped')">
+        <div class="card-inner" style="transition: transform 0.6s; transform-style: preserve-3d; min-height: 140px; position: relative;">
+          <div style="font-weight: 700; font-size: 1.1rem; color: var(--accent-primary);">
+            <i class="fa-solid fa-question-circle"></i> {{ f.question }}
+            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1rem;">(Click card to reveal answer)</div>
+          </div>
+          <div style="font-weight: 600; color: #10b981; margin-top: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem;">
+            💡 Answer: {{ f.answer }}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- TAB 12: Leaderboard -->
+<div id="leaderboardTab" class="tab-pane">
+  <div class="card" style="max-width: 750px; margin: 0 auto; padding: 1.5rem;">
+    <h3 style="font-weight: 800; margin-bottom: 1rem; text-align: center;"><i class="fa-solid fa-trophy" style="color: #f59e0b;"></i> Study Room Leaderboard</h3>
+    <div id="leaderboardBox" style="overflow-x: auto;">
+      <p style="text-align: center; color: var(--text-secondary);">Loading room member rankings...</p>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 13: AI Study Assistant & PDF Chat -->
+<div id="aiTab" class="tab-pane">
+  <div class="card" style="max-width: 750px; margin: 0 auto;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+      <div style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+        <i class="fa-solid fa-robot"></i>
+      </div>
+      <div>
+        <h3 style="font-weight: 700;">AI Study Assistant & Document Chat</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">Ask study questions, summarize topics, or query uploaded group files.</p>
+      </div>
+    </div>
+
+    <div id="aiResponseBox" style="background: var(--bg-secondary); border-radius: var(--radius-md); padding: 1.25rem; min-height: 150px; margin-bottom: 1rem; border: 1px solid var(--border-color); font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap;">
+      Ask a question below to receive an instant explanation or study breakdown!
+    </div>
+
+    <div style="display: flex; gap: 0.5rem;">
+      <input type="text" id="aiPrompt" class="form-control" placeholder="Ask AI e.g. Explain MongoDB indexing or Summarize study notes..." onkeypress="if(event.key === 'Enter') askAI()">
+      <button onclick="askAI()" class="btn btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Ask AI</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Event -->
+<div id="eventModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
+  <div class="card" style="width: 100%; max-width: 420px; position: relative;">
+    <button onclick="document.getElementById('eventModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer;">
+      <i class="fa-solid fa-times"></i>
+    </button>
+    <h3 style="margin-bottom: 1rem; font-weight: 700;">Add Event / Exam Deadline</h3>
+    <div class="form-group">
+      <label class="form-label">Event Title</label>
+      <input type="text" id="eventTitle" class="form-control" placeholder="e.g. Midterm Exam / Project Presentation">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input type="date" id="eventDate" class="form-control">
+    </div>
+    <button onclick="addCalendarEvent()" class="btn btn-primary" style="width: 100%;">Add to Calendar</button>
+  </div>
+</div>
+
+<!-- Modal: Add Poll -->
+<div id="pollModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
+  <div class="card" style="width: 100%; max-width: 420px; position: relative;">
+    <button onclick="document.getElementById('pollModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer;">
+      <i class="fa-solid fa-times"></i>
+    </button>
+    <h3 style="margin-bottom: 1rem; font-weight: 700;">Create Room Poll</h3>
+    <div class="form-group">
+      <label class="form-label">Poll Question</label>
+      <input type="text" id="pollQuestion" class="form-control" placeholder="e.g. When should we hold mock review?">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Option 1</label>
+      <input type="text" id="pollOpt1" class="form-control" placeholder="e.g. Tomorrow 5 PM">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Option 2</label>
+      <input type="text" id="pollOpt2" class="form-control" placeholder="e.g. Saturday 2 PM">
+    </div>
+    <button onclick="createNewPoll()" class="btn btn-primary" style="width: 100%;">Publish Poll</button>
+  </div>
+</div>
+
+<!-- Modal: Add Flashcard -->
+<div id="cardModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
+  <div class="card" style="width: 100%; max-width: 420px; position: relative;">
+    <button onclick="document.getElementById('cardModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer;">
+      <i class="fa-solid fa-times"></i>
+    </button>
+    <h3 style="margin-bottom: 1rem; font-weight: 700;">Add Flashcard</h3>
+    <div class="form-group">
+      <label class="form-label">Question / Term</label>
+      <input type="text" id="cardQuestion" class="form-control" placeholder="e.g. What is PyMongo?">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Answer / Definition</label>
+      <textarea id="cardAnswer" class="form-control" rows="3" placeholder="Explanation..."></textarea>
+    </div>
+    <button onclick="addFlashcard()" class="btn btn-primary" style="width: 100%;">Create Card</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://meet.jit.si/external_api.js"></script>
+<script>
+  const groupId = "{{ group['_id'] }}";
+  const groupName = "{{ group.name }}";
+  let jitsiApi = null;
+  let audioSynth = null;
+  let lastMessageCount = 0;
+
+  function switchTab(tabId, btnElem) {
+    document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    if (btnElem) btnElem.classList.add('active');
+
+    // Save active tab to sessionStorage so tab state is preserved without refresh
+    sessionStorage.setItem('vsg_active_tab_' + groupId, tabId);
+
+    if (tabId === 'whiteboardTab') initWhiteboard();
+    else if (tabId === 'leaderboardTab') loadLeaderboard();
+    else if (tabId === 'calendarTab') loadCalendarEvents();
+    else if (tabId === 'pollsTab') loadPolls();
+  }
+
+  // Restore saved active tab on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    const savedTab = sessionStorage.getItem('vsg_active_tab_' + groupId);
+    if (savedTab && document.getElementById(savedTab)) {
+      const btn = document.querySelector(`.tab-btn[onclick*="${savedTab}"]`);
+      switchTab(savedTab, btn);
+    }
+  });
+
+  // Realtime Chat JS (No page reload)
+  function sendChatMessage() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    fetch('/chat/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ group_id: groupId, text: text })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 'success') { input.value = ''; loadMessages(true); }
+    });
+  }
+
+  function loadMessages(forceScroll = false) {
+    fetch('/chat/messages/' + groupId)
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === 'success') {
+          const win = document.getElementById('chatWindow');
+          if (res.messages.length !== lastMessageCount || forceScroll) {
+            lastMessageCount = res.messages.length;
+            win.innerHTML = res.messages.map(m => `
+              <div class="chat-bubble ${m.user_id === '{{ current_user.id }}' ? 'mine' : ''}">
+                <div class="chat-sender">${m.username} • ${m.timestamp}</div>
+                <div>${m.text}</div>
+              </div>
+            `).join('');
+            win.scrollTop = win.scrollHeight;
+          }
+        }
+      });
+  }
+
+  // Audio Voice Lounge
+  function initJitsiAudio() {
+    initJitsi();
+    const status = document.getElementById('audioStatus');
+    if (status) status.style.display = 'inline-block';
+  }
+  function leaveJitsiAudio() {
+    if (jitsiApi) jitsiApi.dispose();
+    const status = document.getElementById('audioStatus');
+    if (status) status.style.display = 'none';
+  }
+
+  // Code Playground JS
+  function executeCode() {
+    const code = document.getElementById('codeEditor').value;
+    const lang = document.getElementById('codeLang').value;
+    const consoleBox = document.getElementById('codeConsole');
+    consoleBox.innerText = 'Evaluating code snippet...';
+
+    fetch('/api/code/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code, language: lang })
+    })
+    .then(r => r.json())
+    .then(res => consoleBox.innerText = res.output);
+  }
+
+  // Calendar JS (No page reload)
+  function addCalendarEvent() {
+    const t = document.getElementById('eventTitle').value.trim();
+    const d = document.getElementById('eventDate').value;
+    if (!t || !d) return;
+
+    fetch('/api/calendar/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ group_id: groupId, title: t, date: d, type: 'exam' })
+    })
+    .then(r => r.json())
+    .then(res => { document.getElementById('eventModal').style.display='none'; loadCalendarEvents(); });
+  }
+
+  function loadCalendarEvents() {
+    fetch('/api/calendar/get/' + groupId)
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === 'success') {
+          const grid = document.getElementById('calendarEventsGrid');
+          grid.innerHTML = res.events.length === 0 ? '<p style="color:var(--text-secondary)">No events scheduled yet.</p>' : res.events.map(e => `
+            <div class="card">
+              <div style="color:#f59e0b; font-weight:800; font-size:1.1rem;">📅 ${e.title}</div>
+              <div style="font-weight:600; margin-top:0.5rem; color:var(--text-secondary);">Date: ${e.date}</div>
+            </div>
+          `).join('');
+        }
+      });
+  }
+
+  // Polls JS (No page reload)
+  function createNewPoll() {
+    const q = document.getElementById('pollQuestion').value.trim();
+    const o1 = document.getElementById('pollOpt1').value.trim();
+    const o2 = document.getElementById('pollOpt2').value.trim();
+    if (!q || !o1 || !o2) return;
+
+    fetch('/api/polls/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ group_id: groupId, question: q, options: [o1, o2] })
+    })
+    .then(r => r.json())
+    .then(res => { document.getElementById('pollModal').style.display='none'; loadPolls(); });
+  }
+
+  function loadPolls() {
+    fetch('/api/polls/get/' + groupId)
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === 'success') {
+          const grid = document.getElementById('pollsGrid');
+          grid.innerHTML = res.polls.length === 0 ? '<p style="color:var(--text-secondary)">No polls active.</p>' : res.polls.map(p => `
+            <div class="card">
+              <h4 style="font-weight:800; margin-bottom:0.75rem;">🗳️ ${p.question}</h4>
+              <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                ${p.options.map((opt, idx) => `
+                  <button onclick="votePoll('${p._id}', ${idx})" class="btn btn-secondary btn-sm" style="justify-content:space-between;">
+                    <span>${opt.text}</span> <strong>${opt.votes} votes</strong>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          `).join('');
+        }
+      });
+  }
+
+  function votePoll(pollId, optIdx) {
+    fetch('/api/polls/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ poll_id: pollId, option_idx: optIdx })
+    })
+    .then(r => r.json())
+    .then(res => loadPolls());
+  }
+
+  // WebRTC Jitsi Video Call JS
+  function initJitsi() {
+    const container = document.getElementById('jitsiContainer');
+    container.innerHTML = '';
+    const domain = "meet.jit.si";
+    const options = {
+      roomName: "{{ group.jitsi_room_name or 'VirtualStudyGroupRoom' }}",
+      width: "100%",
+      height: 500,
+      parentNode: container,
+      userInfo: { displayName: "{{ current_user.username }}" }
+    };
+    jitsiApi = new JitsiMeetExternalAPI(domain, options);
+  }
+
+  // Whiteboard Canvas JS
+  let canvas, ctx, drawing = false;
+  function initWhiteboard() {
+    canvas = document.getElementById('whiteboardCanvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+
+    canvas.onmousedown = (e) => { drawing = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); };
+    canvas.onmousemove = (e) => {
+      if (!drawing) return;
+      ctx.strokeStyle = document.getElementById('brushColor').value;
+      ctx.lineWidth = document.getElementById('brushSize').value;
+      ctx.lineCap = 'round';
+      ctx.lineTo(e.offsetX, e.offsetY);
+      ctx.stroke();
+    };
+    canvas.onmouseup = () => { drawing = false; };
+
+    fetch('/api/whiteboard/get/' + groupId)
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === 'success' && res.data) {
+          const img = new Image();
+          img.onload = () => ctx.drawImage(img, 0, 0);
+          img.src = res.data;
+        }
+      });
+  }
+
+  function clearWhiteboard() {
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function saveWhiteboard() {
+    const dataURL = canvas.toDataURL();
+    fetch('/api/whiteboard/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ group_id: groupId, data: dataURL })
+    })
+    .then(r => r.json())
+    .then(res => alert('Whiteboard saved to Cloud!'));
+  }
+
+  // Study Task Planner JS (Seamless AJAX - No page refresh)
+  function addNewTask() {
+    const input = document.getElementById('newTaskInput');
+    const title = input.value.trim();
+    if (!title) return;
+
+    fetch('/api/tasks/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ group_id: groupId, title: title })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 'success' && res.task) {
+        input.value = '';
+        const col = document.getElementById('colTodo');
+        const div = document.createElement('div');
+        div.className = 'kanban-card';
+        div.id = 'task-card-' + res.task._id;
+        div.innerHTML = `<div style="font-weight: 600;">${res.task.title}</div><button onclick="moveTask('${res.task._id}', 'in_progress')" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem; width: 100%;">Start <i class="fa-solid fa-arrow-right"></i></button>`;
+        col.appendChild(div);
+      }
+    });
+  }
+
+  function moveTask(taskId, newStatus) {
+    fetch('/api/tasks/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task_id: taskId, status: newStatus })
+    })
+    .then(r => r.json())
+    .then(res => {
+      const elem = document.getElementById('task-card-' + taskId);
+      if (elem) {
+        elem.remove();
+        if (newStatus === 'in_progress') {
+          const col = document.getElementById('colInProgress');
+          const div = document.createElement('div');
+          div.className = 'kanban-card';
+          div.id = 'task-card-' + taskId;
+          div.innerHTML = elem.innerHTML.replace("moveTask('" + taskId + "', 'in_progress')", "moveTask('" + taskId + "', 'done')").replace("Start <i class=\"fa-solid fa-arrow-right\"></i>", "Complete ✅");
+          col.appendChild(div);
+        } else if (newStatus === 'done') {
+          const col = document.getElementById('colDone');
+          const div = document.createElement('div');
+          div.className = 'kanban-card';
+          div.style.opacity = '0.7';
+          div.id = 'task-card-' + taskId;
+          div.innerHTML = `<div style="font-weight: 600; text-decoration: line-through;">${elem.querySelector('div').innerText}</div>`;
+          col.appendChild(div);
+        }
+      }
+    });
+  }
+
+  // Pomodoro Timer JS
+  let timerInterval = null, timeLeft = 25 * 60, isRunning = false;
+  function toggleTimer() {
+    const btn = document.getElementById('startTimerBtn');
+    if (isRunning) {
+      clearInterval(timerInterval);
+      isRunning = false;
+      btn.innerHTML = '<i class="fa-solid fa-play"></i> Resume';
+    } else {
+      isRunning = true;
+      btn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+      timerInterval = setInterval(() => {
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          fetch('/api/analytics/log-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ group_id: groupId, group_name: groupName, duration_minutes: 25 })
+          })
+          .then(r => r.json())
+          .then(res => {
+            alert('🎉 Pomodoro Session Completed! +250 XP earned and logged.');
+          });
+        } else {
+          timeLeft--;
+          updateTimerDisplay();
+        }
+      }, 1000);
+    }
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+    timeLeft = 25 * 60;
+    document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-play"></i> Start';
+    updateTimerDisplay();
+  }
+
+  function updateTimerDisplay() {
+    const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+    const s = (timeLeft % 60).toString().padStart(2, '0');
+    document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+  }
+
+  // Ambience Sound Synth
+  function playAmbience(type) {
+    stopAmbience();
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioSynth = new AudioContext();
+    const osc = audioSynth.createOscillator();
+    const gain = audioSynth.createGain();
+
+    if (type === 'rain') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(80, audioSynth.currentTime);
+      gain.gain.setValueAtTime(0.08, audioSynth.currentTime);
+    } else if (type === 'lofi') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, audioSynth.currentTime);
+      gain.gain.setValueAtTime(0.12, audioSynth.currentTime);
+    } else {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(140, audioSynth.currentTime);
+      gain.gain.setValueAtTime(0.1, audioSynth.currentTime);
+    }
+
+    osc.connect(gain);
+    gain.connect(audioSynth.destination);
+    osc.start();
+  }
+
+  function stopAmbience() {
+    if (audioSynth) { audioSynth.close(); audioSynth = null; }
+  }
+
+  // Flashcards JS (No page reload)
+  function addFlashcard() {
+    const q = document.getElementById('cardQuestion').value.trim();
+    const a = document.getElementById('cardAnswer').value.trim();
+    if (!q || !a) return;
+
+    fetch('/api/flashcards/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ group_id: groupId, question: q, answer: a })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 'success') {
+        document.getElementById('cardModal').style.display = 'none';
+        document.getElementById('cardQuestion').value = '';
+        document.getElementById('cardAnswer').value = '';
+        const grid = document.getElementById('cardsGrid');
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'card';
+        cardDiv.style.perspective = '1000px';
+        cardDiv.style.cursor = 'pointer';
+        cardDiv.onclick = function() { this.querySelector('.card-inner').classList.toggle('flipped'); };
+        cardDiv.innerHTML = `
+          <div class="card-inner" style="transition: transform 0.6s; transform-style: preserve-3d; min-height: 140px; position: relative;">
+            <div style="font-weight: 700; font-size: 1.1rem; color: var(--accent-primary);">
+              <i class="fa-solid fa-question-circle"></i> ${q}
+              <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 1rem;">(Click card to reveal answer)</div>
+            </div>
+            <div style="font-weight: 600; color: #10b981; margin-top: 0.75rem; border-top: 1px dashed var(--border-color); padding-top: 0.5rem;">
+              💡 Answer: ${a}
+            </div>
+          </div>
+        `;
+        grid.appendChild(cardDiv);
+      }
+    });
+  }
+
+  // Leaderboard JS
+  function loadLeaderboard() {
+    fetch('/api/leaderboard/' + groupId)
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === 'success') {
+          const box = document.getElementById('leaderboardBox');
+          box.innerHTML = `
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary);">
+                  <th style="padding: 0.75rem;">Rank</th>
+                  <th style="padding: 0.75rem;">Member</th>
+                  <th style="padding: 0.75rem;">XP Points</th>
+                  <th style="padding: 0.75rem;">Daily Streak</th>
+                  <th style="padding: 0.75rem;">Total Hours</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${res.leaderboard.map((m, idx) => `
+                  <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 0.75rem; font-weight: 800; color: ${idx === 0 ? '#f59e0b' : 'inherit'};">#${idx + 1} ${idx === 0 ? '👑' : ''}</td>
+                    <td style="padding: 0.75rem; font-weight: 700;">${m.username}</td>
+                    <td style="padding: 0.75rem; color: #8b5cf6; font-weight: 800;">${m.xp_points} XP</td>
+                    <td style="padding: 0.75rem; color: #f59e0b; font-weight: 700;">🔥 ${m.streak_count} Days</td>
+                    <td style="padding: 0.75rem; font-weight: 600;">${m.total_hours} hrs</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          `;
+        }
+      });
+  }
+
+  // AI Assistant JS
+  function askAI() {
+    const input = document.getElementById('aiPrompt');
+    const prompt = input.value.trim();
+    if (!prompt) return;
+
+    const box = document.getElementById('aiResponseBox');
+    box.innerHTML = '🤖 <em>Thinking and analyzing query...</em>';
+
+    fetch('/api/ai/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: prompt })
+    })
+    .then(r => r.json())
+    .then(res => {
+      box.innerText = res.answer;
+      input.value = '';
+    });
+  }
+
+  setInterval(loadMessages, 3000);
+</script>
+{% endblock %}

@@ -1,0 +1,71 @@
+mutation SeedDemoData @transaction @auth(level: USER) {
+  user_insertMany(data: [
+    {
+      id: "550e8400-e29b-41d4-a716-446655440000",
+      username: "alice_study",
+      email: "alice@example.com",
+      streakCount: 5,
+      totalHours: 12.5
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440001",
+      username: "bob_coder",
+      email: "bob@example.com",
+      streakCount: 2,
+      totalHours: 8.0
+    },
+    {
+      id: "550e8400-e29b-41d4-a716-446655440002",
+      username: "charlie_math",
+      email: "charlie@example.com",
+      streakCount: 10,
+      totalHours: 45.2
+    }
+  ])
+  studyGroup_insertMany(data: [
+    {
+      id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      name: "React Mastery",
+      creatorId: "550e8400-e29b-41d4-a716-446655440000",
+      createdAt: "2023-10-01T10:00:00Z"
+    },
+    {
+      id: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12",
+      name: "Linear Algebra",
+      creatorId: "550e8400-e29b-41d4-a716-446655440002",
+      createdAt: "2023-10-05T14:30:00Z"
+    }
+  ])
+  groupMember_insertMany(data: [
+    { userId: "550e8400-e29b-41d4-a716-446655440000", groupId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11" },
+    { userId: "550e8400-e29b-41d4-a716-446655440001", groupId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11" },
+    { userId: "550e8400-e29b-41d4-a716-446655440002", groupId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12" }
+  ])
+  session_insertMany(data: [
+    { userId: "550e8400-e29b-41d4-a716-446655440000", startTime: "2023-10-10T09:00:00Z", durationMinutes: 60, topic: "Hooks" },
+    { userId: "550e8400-e29b-41d4-a716-446655440001", startTime: "2023-10-10T10:00:00Z", durationMinutes: 45, topic: "Components" },
+    { userId: "550e8400-e29b-41d4-a716-446655440002", startTime: "2023-10-11T11:00:00Z", durationMinutes: 120, topic: "Matrices" }
+  ])
+  resource_insertMany(data: [
+    {
+      id: "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      groupId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      ownerId: "550e8400-e29b-41d4-a716-446655440000",
+      title: "React Docs",
+      fileUrl: "https://react.dev",
+      type: "PDF",
+      createdAt: "2023-10-01T11:00:00Z"
+    }
+  ])
+  videoCall_insertMany(data: [
+    {
+      id: "b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e",
+      groupId: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11",
+      hostId: "550e8400-e29b-41d4-a716-446655440000",
+      isActive: true
+    }
+  ])
+  callParticipant_insertMany(data: [
+    { callId: "b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e", userId: "550e8400-e29b-41d4-a716-446655440001", joinedAt: "2023-10-12T08:00:00Z" }
+  ])
+}

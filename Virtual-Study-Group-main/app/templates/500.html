@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block title %}Server Error - 500{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 4rem 1rem;">
+  <h1 style="font-size: 5rem; font-weight: 800; color: #f59e0b;">500</h1>
+  <h2 style="margin-bottom: 1rem;">Internal Server Error</h2>
+  <p style="color: var(--text-secondary); margin-bottom: 2rem;">Something went wrong on our end. Please try again in a few moments.</p>
+  <a href="{{ url_for('main.index') }}" class="btn btn-primary"><i class="fa-solid fa-home"></i> Return Home</a>
+</div>
+{% endblock %}

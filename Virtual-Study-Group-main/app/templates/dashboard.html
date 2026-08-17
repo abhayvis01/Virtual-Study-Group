@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Virtual Study Group{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 2rem; font-weight: 800;">Welcome, {{ current_user.username }} 👋</h1>
+    <p style="color: var(--text-secondary); margin-top: 0.25rem;">Manage your active study rooms and view your study analytics.</p>
+  </div>
+  <div style="display: flex; gap: 0.75rem;">
+    <button onclick="fetchCertificate()" class="btn btn-secondary" style="border-color: #f59e0b; color: #f59e0b;">
+      <i class="fa-solid fa-certificate"></i> My Certificate
+    </button>
+    <button onclick="document.getElementById('joinModal').style.display='flex'" class="btn btn-secondary">
+      <i class="fa-solid fa-key"></i> Join with Code
+    </button>
+    <a href="{{ url_for('groups.create_group') }}" class="btn btn-primary">
+      <i class="fa-solid fa-plus"></i> Create New Room
+    </a>
+  </div>
+</div>
+
+<!-- High-Contrast Daily Study Target Goal Card -->
+{% set pct = [((current_user.total_study_minutes / (current_user.daily_goal_minutes or 120)) * 100)|round|int, 100]|min %}
+<div class="card" style="margin-bottom: 2rem; border: 1.5px solid var(--accent-primary); background: var(--bg-card); position: relative; overflow: hidden; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.85rem;">
+      <div style="background: rgba(59, 130, 246, 0.2); color: var(--accent-primary); width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+        <i class="fa-solid fa-bullseye"></i>
+      </div>
+      <div>
+        <h3 style="font-weight: 800; font-size: 1.15rem; color: var(--text-primary); margin-bottom: 0.15rem;">Daily Study Target Goal</h3>
+        <p style="font-size: 0.9rem; font-weight: 700; color: var(--accent-primary);">Target: 2 Hours (120 Mins) / Day</p>
+      </div>
+    </div>
+    <div style="font-size: 1.5rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 0.3rem 0.85rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3);">
+      {{ pct }}% Completed
+    </div>
+  </div>
+
+  <div style="width: 100%; height: 16px; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; padding: 2px; overflow: hidden;">
+    <div style="width: {{ pct }}%; height: 100%; background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%); border-radius: 8px; transition: width 1s ease-in-out; box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);"></div>
+  </div>
+</div>
+
+<!-- Metrics Overview -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
+  <div class="card" style="display: flex; align-items: center; gap: 1rem;">
+    <div style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+      <i class="fa-solid fa-users"></i>
+    </div>
+    <div>
+      <div style="font-size: 1.5rem; font-weight: 800;">{{ stats.total_joined }}</div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Enrolled Rooms</div>
+    </div>
+  </div>
+
+  <div class="card" style="display: flex; align-items: center; gap: 1rem;">
+    <div style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+      <i class="fa-solid fa-fire"></i>
+    </div>
+    <div>
+      <div style="font-size: 1.5rem; font-weight: 800;">{{ stats.streak_count }} Days</div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Daily Study Streak</div>
+    </div>
+  </div>
+
+  <div class="card" style="display: flex; align-items: center; gap: 1rem;">
+    <div style="background: rgba(16, 185, 129, 0.15); color: #10b981; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+      <i class="fa-solid fa-clock"></i>
+    </div>
+    <div>
+      <div style="font-size: 1.5rem; font-weight: 800;">{{ stats.total_hours }} Hrs</div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Total Study Time</div>
+    </div>
+  </div>
+
+  <div class="card" style="display: flex; align-items: center; gap: 1rem;">
+    <div style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+      <i class="fa-solid fa-bolt"></i>
+    </div>
+    <div>
+      <div style="font-size: 1.5rem; font-weight: 800;">{{ stats.xp_points }} XP</div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Gamification Points</div>
+    </div>
+  </div>
+</div>
+
+<!-- My Study Rooms Section -->
+<h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1.25rem;"><i class="fa-solid fa-folder-open"></i> My Study Rooms</h2>
+{% if user_groups %}
+  <div class="grid-3" style="margin-bottom: 3rem;">
+    {% for g in user_groups %}
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+            <h3 style="font-size: 1.2rem; font-weight: 700;">{{ g.name }}</h3>
+            <span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+              {{ g.category or 'General' }}
+            </span>
+          </div>
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
+            {{ g.description[:90] }}{% if g.description|length > 90 %}...{% endif %}
+          </p>
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+            <span><i class="fa-solid fa-key"></i> Code: <strong>{{ g.room_code }}</strong></span>
+            <span><i class="fa-solid fa-users"></i> {{ g.members|length }} members</span>
+          </div>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+            <a href="{{ url_for('groups.view_group', group_id=g['_id']) }}" class="btn btn-primary" style="flex: 1;">
+              Open Workspace <i class="fa-solid fa-arrow-right"></i>
+            </a>
+            {% if g.created_by|string == current_user.id|string %}
+              <form action="{{ url_for('groups.delete_group', group_id=g['_id']) }}" method="POST" onsubmit="return confirm('Delete this study room?');">
+                <button type="submit" class="btn btn-secondary" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); padding: 0.65rem 0.85rem;" title="Delete Room">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card" style="text-align: center; padding: 3rem; margin-bottom: 3rem;">
+    <i class="fa-solid fa-graduation-cap" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
+    <h3>No Study Rooms Joined Yet</h3>
+    <p style="color: var(--text-secondary); margin: 0.5rem 0 1.5rem 0;">Create a room or enter a 6-character code to join your peers.</p>
+    <a href="{{ url_for('groups.create_group') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Create Study Room</a>
+  </div>
+{% endif %}
+
+<!-- Study Hours Analytics Table -->
+<h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1.25rem;"><i class="fa-solid fa-chart-line"></i> Study Analytics & Session Log</h2>
+<div class="card" style="margin-bottom: 3rem; overflow-x: auto;">
+  {% if study_logs %}
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary);">
+          <th style="padding: 0.75rem 1rem;">Date & Time</th>
+          <th style="padding: 0.75rem 1rem;">Study Room / Topic</th>
+          <th style="padding: 0.75rem 1rem;">Duration</th>
+          <th style="padding: 0.75rem 1rem;">XP Earned</th>
+          <th style="padding: 0.75rem 1rem;">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in study_logs %}
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 0.85rem 1rem; font-weight: 600;">{{ log.timestamp }}</td>
+            <td style="padding: 0.85rem 1rem; color: var(--accent-primary); font-weight: 700;">{{ log.group_name }}</td>
+            <td style="padding: 0.85rem 1rem;">{{ log.duration_minutes }} minutes</td>
+            <td style="padding: 0.85rem 1rem; color: #f59e0b; font-weight: 700;">+{{ log.xp_earned }} XP</td>
+            <td style="padding: 0.85rem 1rem;"><span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 0.15rem 0.5rem; border-radius: 8px; font-weight: 700; font-size: 0.75rem;">COMPLETED</span></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+      <p>No study sessions logged yet. Complete a Pomodoro Focus Session in any study room to start tracking your hours!</p>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Public Study Rooms Discovery -->
+<h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1.25rem;"><i class="fa-solid fa-compass"></i> Discover Public Rooms</h2>
+<div class="grid-3">
+  {% for g in public_groups %}
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700;">{{ g.name }}</h3>
+        <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+          {{ g.category or 'General' }}
+        </span>
+      </div>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
+        {{ g.description[:80] }}...
+      </p>
+      <a href="{{ url_for('groups.view_group', group_id=g['_id']) }}" class="btn btn-secondary btn-sm" style="width: 100%;">
+        View & Join Room
+      </a>
+    </div>
+  {% endfor %}
+</div>
+
+<!-- Modal: Study Certificate -->
+<div id="certModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); z-index: 1000; align-items: center; justify-content: center;">
+  <div class="card" style="width: 100%; max-width: 550px; position: relative; text-align: center; border: 2px solid #f59e0b; background: #0f172a; padding: 2.5rem;">
+    <button onclick="document.getElementById('certModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer;">
+      <i class="fa-solid fa-times"></i>
+    </button>
+    <div style="font-size: 3rem; color: #f59e0b; margin-bottom: 0.5rem;"><i class="fa-solid fa-award"></i></div>
+    <h2 style="font-size: 1.6rem; font-weight: 800; color: #f59e0b;" id="certTitle">Certificate of Achievement</h2>
+    <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0.5rem 0 1.5rem 0;">PROUDLY PRESENTED TO</p>
+    <h1 style="font-size: 2.2rem; font-weight: 800; text-decoration: underline;" id="certName">{{ current_user.username }}</h1>
+    <p style="font-size: 0.95rem; color: var(--text-secondary); margin: 1.5rem 0; line-height: 1.6;">
+      For outstanding dedication, completing <strong id="certHours">0</strong> study hours, maintaining a <strong id="certStreak">1</strong>-day streak, and earning <strong id="certXP">50</strong> XP points on the Virtual Study Group Platform.
+    </p>
+    <div style="font-size: 0.8rem; color: var(--text-secondary);" id="certDate">Issued on: August 2026</div>
+  </div>
+</div>
+
+<!-- Modal: Join Room by Code -->
+<div id="joinModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
+  <div class="card" style="width: 100%; max-width: 420px; position: relative;">
+    <button onclick="document.getElementById('joinModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer;">
+      <i class="fa-solid fa-times"></i>
+    </button>
+    <h3 style="margin-bottom: 1rem; font-weight: 700;"><i class="fa-solid fa-key"></i> Join Room via Code</h3>
+    <form action="{{ url_for('groups.join_group') }}" method="POST">
+      {{ join_form.hidden_tag() }}
+      <div class="form-group">
+        {{ join_form.room_code.label(class="form-label") }}
+        {{ join_form.room_code(class="form-control", placeholder="e.g. A1B2C3", style="text-transform: uppercase; letter-spacing: 2px; font-weight: 700; text-align: center; font-size: 1.2rem;") }}
+      </div>
+      {{ join_form.submit(class="btn btn-primary", style="width: 100%;") }}
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function fetchCertificate() {
+    fetch('/api/certificate/generate')
+      .then(r => r.json())
+      .then(res => {
+        if (res.status === 'success') {
+          const c = res.certificate;
+          document.getElementById('certTitle').innerText = c.title;
+          document.getElementById('certName').innerText = c.username;
+          document.getElementById('certHours').innerText = c.hours_studied;
+          document.getElementById('certStreak').innerText = c.streak_days;
+          document.getElementById('certXP').innerText = c.xp_earned;
+          document.getElementById('certDate').innerText = 'Issued on: ' + c.issued_date;
+          document.getElementById('certModal').style.display = 'flex';
+        }
+      });
+  }
+</script>
+{% endblock %}

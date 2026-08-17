@@ -1,0 +1,9 @@
+<!-- HTML -->
+<button id="create-meeting">Create Google Meet Meeting</button>
+<script>
+    document.getElementById('create-meeting').addEventListener('click', async () => {
+        const response = await fetch('/create-meeting', { method: 'POST' });
+        const data = await response.json();
+        window.open(data.meetingLink, '_blank'); // Open the meeting link in a new tab
+    });
+</script>
