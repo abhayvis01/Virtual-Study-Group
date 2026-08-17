@@ -77,18 +77,6 @@ A state-of-the-art, real-time virtual study platform built for students and educ
    python run.py
    ```
    Open **`http://localhost:5000`** in your browser!
-
----
-
-## 🌐 Deploying to Render.com (Production Hosting)
-
-This project includes pre-configured `Procfile` and `requirements.txt` for 1-click cloud deployment on Render.com:
-
-1. Connect your GitHub repository to **[Render.com](https://render.com)**.
-2. Set **Start Command** to `gunicorn run:app`.
-3. Add your Environment Variables (`MONGO_URI`, `SECRET_KEY`, etc.).
-4. Click **Deploy Web Service** to launch live!
-
 ---
 
 ## 📄 Terms of Service & Privacy
