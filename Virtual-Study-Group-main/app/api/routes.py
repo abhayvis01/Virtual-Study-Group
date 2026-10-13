@@ -13,6 +13,73 @@ from app.services.mongo_service import (
 
 bp = Blueprint('api', __name__)
 
+def _extract_document_text(file_path_or_url, max_chars=8000):
+    """
+    Extracts readable text from PDFs, Word docs (.docx), text files, or URLs.
+    Handles both local uploads and remote HTTP/HTTPS links (e.g. Firebase storage).
+    """
+    if not file_path_or_url:
+        return ""
+    try:
+        raw_bytes = None
+        ext = file_path_or_url.split('?')[0].rsplit('.', 1)[-1].lower() if '.' in file_path_or_url else ''
+
+        if file_path_or_url.startswith('http://') or file_path_or_url.startswith('https://'):
+            import requests as req
+            resp = req.get(file_path_or_url, timeout=10)
+            if resp.status_code == 200:
+                raw_bytes = io.BytesIO(resp.content)
+        else:
+            local_rel = file_path_or_url.lstrip('/')
+            full_path = os.path.join(current_app.root_path, local_rel.replace('static/', 'static' + os.sep))
+            if os.path.exists(full_path):
+                with open(full_path, 'rb') as f:
+                    raw_bytes = io.BytesIO(f.read())
+
+        if not raw_bytes:
+            return ""
+
+        extracted_text = ""
+        # 1. PDF files
+        if ext == 'pdf':
+            try:
+                import pypdf
+                reader = pypdf.PdfReader(raw_bytes)
+                pages_text = []
+                for p in reader.pages[:15]:  # read up to first 15 pages
+                    t = p.extract_text()
+                    if t:
+                        pages_text.append(t)
+                extracted_text = "\n".join(pages_text)
+            except Exception as pe:
+                print(f"[PDF Extract Notice]: {pe}")
+
+        # 2. DOCX Word documents
+        elif ext in ['docx', 'doc']:
+            try:
+                import docx
+                doc = docx.Document(raw_bytes)
+                extracted_text = "\n".join([p.text for p in doc.paragraphs if p.text])
+            except Exception as de:
+                print(f"[Docx Extract Notice]: {de}")
+
+        # 3. Plain text / code / csv / markdown
+        else:
+            try:
+                raw_bytes.seek(0)
+                extracted_text = raw_bytes.read().decode('utf-8', errors='ignore')
+            except Exception as te:
+                print(f"[Text Extract Notice]: {te}")
+
+        # Clean and truncate
+        cleaned = re.sub(r'\s+', ' ', extracted_text).strip()
+        if len(cleaned) > max_chars:
+            cleaned = cleaned[:max_chars] + "\n...[Additional document pages omitted for brevity]"
+        return cleaned
+    except Exception as ex:
+        print(f"[Document Parser Error]: {ex}")
+        return ""
+
 # --- Google Auth API ---
 @bp.route('/auth/google', methods=['POST'])
 @bp.route('/google-login', methods=['POST'])
@@ -940,21 +1007,14 @@ def ai_ask():
             r_content = res.get('content', '').strip()
             r_file = res.get('file_url', '')
 
-            # If the file is stored locally on the server and is a text file, read snippet
+            # Extract deep inside content of the document (PDF, Word, TXT, etc.)
             file_extra = ""
-            if r_file and r_file.startswith('/static/uploads/'):
-                try:
-                    rel_path = r_file.lstrip('/')
-                    full_local = os.path.join(current_app.root_path, rel_path.replace('static/', 'static' + os.sep))
-                    if os.path.exists(full_local) and any(full_local.lower().endswith(ext) for ext in ['.txt', '.md', '.py', '.js', '.csv', '.json']):
-                        with open(full_local, 'r', encoding='utf-8', errors='ignore') as f:
-                            file_content = f.read(2500)
-                            if file_content:
-                                file_extra = f"\n[File Contents Snippet]:\n{file_content}"
-                except Exception as ex:
-                    print(f"[Local File Read Notice]: {ex}")
+            if r_file:
+                doc_text = _extract_document_text(r_file, max_chars=8000)
+                if doc_text:
+                    file_extra = f"\n[Full Document Text Extract]:\n{doc_text}"
 
-            snippet = f"- **{r_name}** ({r_type.upper()}):\n{r_content}{file_extra}"
+            snippet = f"### Document: {r_name} (Type: {r_type.upper()})\nDescription/Notes: {r_content}{file_extra}"
             resources_context_snippets.append(snippet)
 
         resources_context = "\n\n".join(resources_context_snippets) if resources_context_snippets else None
