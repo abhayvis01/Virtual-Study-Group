@@ -49,6 +49,7 @@ def login():
 
 
 @bp.route('/google-login', methods=['POST'])
+@bp.route('/api/auth/google', methods=['POST'])
 def google_login():
     data = request.get_json() or {}
     email = data.get('email', '').strip().lower()

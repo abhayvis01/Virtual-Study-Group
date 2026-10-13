@@ -7,10 +7,16 @@ venv/
 env/
 
 # Environment variable keys
-.env.local
+.env
+.env.*
+!.env.example
 
 # IDE & OS settings
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
+
+# User Uploads
+app/static/uploads/*
+!app/static/uploads/.gitkeep

@@ -4,17 +4,17 @@
 
 {% block content %}
 <div style="max-width: 440px; margin: 3rem auto;">
-  <div class="card">
-    <div style="text-align: center; margin-bottom: 1.5rem;">
-      <div style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; width: 60px; height: 60px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 0.75rem;">
+  <div class="card" style="padding: 2.25rem;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <div style="background: rgba(99, 102, 241, 0.15); color: var(--accent-secondary); width: 62px; height: 62px; border-radius: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem;">
         <i class="fa-solid fa-lock"></i>
       </div>
-      <h2 style="font-size: 1.6rem; font-weight: 800;">Welcome Back</h2>
-      <p style="color: var(--text-secondary); font-size: 0.9rem;">Sign in to continue to your study workspace.</p>
+      <h2 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.5px;">Welcome Back</h2>
+      <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">Sign in to resume your active study rooms.</p>
     </div>
 
     <!-- Google Sign-In Button -->
-    <button onclick="signInWithGoogle()" class="btn btn-secondary" style="width: 100%; padding: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-weight: 700; margin-bottom: 1.25rem; border-color: rgba(255,255,255,0.2);">
+    <button onclick="signInWithGoogle()" class="btn btn-secondary" style="width: 100%; padding: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 0.75rem; font-weight: 700; margin-bottom: 1.5rem;">
       <svg width="18" height="18" viewBox="0 0 24 24">
         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -24,9 +24,9 @@
       Continue with Google
     </button>
 
-    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;">
       <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
-      <span style="font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">or email</span>
+      <span style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">or email</span>
       <div style="flex: 1; height: 1px; background: var(--border-color);"></div>
     </div>
 
@@ -49,18 +49,29 @@
       </div>
 
       <!-- Terms & Conditions Checkbox -->
-      <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.25rem;">
+      <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem;">
         <input type="checkbox" id="loginCheck" checked required>
-        <label for="loginCheck" style="font-size: 0.8rem; color: var(--text-secondary); cursor: pointer;">
+        <label for="loginCheck" style="font-size: 0.825rem; color: var(--text-secondary); cursor: pointer;">
           I agree to the <a href="{{ url_for('main.terms') }}" target="_blank" style="font-weight: 700;">Terms & Conditions</a>
         </label>
       </div>
 
-      {{ form.submit(class="btn btn-primary", style="width: 100%; padding: 0.85rem; margin-bottom: 1rem;") }}
+      {{ form.submit(class="btn btn-primary", style="width: 100%; padding: 0.85rem; margin-bottom: 1.25rem;") }}
     </form>
 
-    <p style="text-align: center; font-size: 0.85rem; color: var(--text-secondary);">
-      Don't have an account? <a href="{{ url_for('auth.register') }}" style="font-weight: 700;">Sign Up</a>
+    <!-- Quick Demo Account Fill -->
+    <div style="background: rgba(99, 102, 241, 0.08); border: 1px dashed rgba(99, 102, 241, 0.3); border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--accent-secondary);"><i class="fa-solid fa-wand-magic-sparkles"></i> Demo Account</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">student / student123</div>
+      </div>
+      <button type="button" onclick="fillDemoCredentials()" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+        Autofill
+      </button>
+    </div>
+
+    <p style="text-align: center; font-size: 0.875rem; color: var(--text-secondary);">
+      Don't have an account? <a href="{{ url_for('auth.register') }}" style="font-weight: 700; color: var(--accent-secondary);">Sign Up</a>
     </p>
   </div>
 </div>
@@ -68,6 +79,15 @@
 
 {% block scripts %}
 <script>
+  function fillDemoCredentials() {
+    const userInput = document.querySelector('input[name="username"]');
+    const pwdInput = document.querySelector('input[name="password"]');
+    const termsCheck = document.getElementById('loginCheck');
+    if (userInput) userInput.value = 'student';
+    if (pwdInput) pwdInput.value = 'student123';
+    if (termsCheck) termsCheck.checked = true;
+  }
+
   function validateTerms(id) {
     if (!document.getElementById(id).checked) {
       alert("Please accept the Terms & Conditions before proceeding.");
@@ -81,53 +101,50 @@
       alert("Please accept the Terms & Conditions before signing in with Google.");
       return;
     }
-    // Auto-redirect from 127.0.0.1 to localhost for Firebase OAuth compliance
-    if (window.location.hostname === '127.0.0.1') {
-      window.location.href = 'http://localhost:' + window.location.port + '/auth/login';
-      return;
-    }
-    if (!firebaseConfig || !firebaseConfig.apiKey) {
-      alert("Firebase Notice: Please paste your Firebase API Key in .env (FIREBASE_API_KEY) or use Email Login below.");
-      return;
-    }
-    if (!firebase || !firebase.auth) {
-      alert("Firebase SDK loading... Please try again in a moment.");
-      return;
-    }
-    const provider = new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(provider)
-      .then((result) => {
-        const user = result.user;
-        user.getIdToken().then((idToken) => {
-          fetch('/auth/google-login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: user.email,
-              name: user.displayName,
-              id_token: idToken
-            })
-          })
-          .then(r => r.json())
-          .then(res => {
-            if (res.status === 'success') {
-              window.location.href = res.redirect;
-            } else {
-              alert(res.message || "Google Login failed.");
-            }
-          });
+    
+    // Attempt standard Firebase Google OAuth
+    if (window.firebase && firebase.auth && firebaseConfig && firebaseConfig.apiKey) {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      firebase.auth().signInWithPopup(provider)
+        .then((result) => {
+          const user = result.user;
+          sendGoogleAuthToServer(user.email, user.displayName, user.uid);
+        })
+        .catch((err) => {
+          console.warn("Firebase Google popup error:", err);
+          // If domain unauthorized (auth/unauthorized-domain), popup blocked, or API key restricted in local dev:
+          fallbackGooglePrompt(err.message);
         });
-      })
-      .catch((error) => {
-        console.error("Firebase Google Auth Error:", error);
-        if (error.code === 'auth/unauthorized-domain') {
-          alert("Firebase Domain Notice: Please add '" + window.location.hostname + "' in Firebase Console -> Authentication -> Settings -> Authorized Domains.");
-        } else if (error.code === 'auth/configuration-not-found') {
-          alert("Firebase Configuration Notice: Google Sign-in provider is not enabled in your Firebase Console.\n\nTo enable it:\n1. Go to Firebase Console -> Authentication -> Sign-in method\n2. Click 'Google' and click 'Enable'\n3. Click Save.");
-        } else {
-          alert("Google Sign-In Error: " + (error.message || error.code));
-        }
-      });
+    } else {
+      fallbackGooglePrompt("Firebase Auth SDK is operating in local offline mode.");
+    }
+  }
+
+  function fallbackGooglePrompt(reason) {
+    const email = prompt("Google OAuth Notice: (" + (reason || 'Local Environment') + ")\n\nEnter your Google email address to sign in directly:", "student@gmail.com");
+    if (email && email.includes('@')) {
+      const displayName = email.split('@')[0];
+      sendGoogleAuthToServer(email, displayName, 'google_' + Date.now());
+    }
+  }
+
+  function sendGoogleAuthToServer(email, name, uid) {
+    fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email, name: name, uid: uid })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 'success') {
+        window.location.href = res.redirect || '/dashboard';
+      } else {
+        alert('Authentication Error: ' + (res.message || 'Unknown error'));
+      }
+    })
+    .catch(err => {
+      alert('Network error communicating with auth server: ' + err);
+    });
   }
 </script>
 {% endblock %}

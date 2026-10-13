@@ -3,121 +3,146 @@
 {% block title %}Dashboard - Virtual Study Group{% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+<!-- Welcome & Action Bar -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1.25rem;">
   <div>
-    <h1 style="font-size: 2rem; font-weight: 800;">Welcome, {{ current_user.username }} 👋</h1>
-    <p style="color: var(--text-secondary); margin-top: 0.25rem;">Manage your active study rooms and view your study analytics.</p>
+    <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.25rem;">
+      <h1 style="font-size: 2.1rem; font-weight: 800; letter-spacing: -0.5px;">Welcome back, {{ current_user.username }}</h1>
+      <span style="font-size: 1.5rem;">👋</span>
+    </div>
+    <p style="color: var(--text-secondary); font-size: 0.95rem;">Collaborate with peers, monitor study goals, and unlock milestone achievements.</p>
   </div>
-  <div style="display: flex; gap: 0.75rem;">
-    <button onclick="fetchCertificate()" class="btn btn-secondary" style="border-color: #f59e0b; color: #f59e0b;">
-      <i class="fa-solid fa-certificate"></i> My Certificate
+  <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+    <button onclick="fetchCertificate()" class="btn btn-secondary" style="border-color: rgba(245, 158, 11, 0.4); color: #f59e0b;">
+      <i class="fa-solid fa-award"></i> View Certificate
     </button>
     <button onclick="document.getElementById('joinModal').style.display='flex'" class="btn btn-secondary">
-      <i class="fa-solid fa-key"></i> Join with Code
+      <i class="fa-solid fa-key"></i> Join by Code
     </button>
     <a href="{{ url_for('groups.create_group') }}" class="btn btn-primary">
-      <i class="fa-solid fa-plus"></i> Create New Room
+      <i class="fa-solid fa-plus"></i> Create Study Room
     </a>
   </div>
 </div>
 
-<!-- High-Contrast Daily Study Target Goal Card -->
+<!-- Daily Study Target Goal Card -->
 {% set pct = [((current_user.total_study_minutes / (current_user.daily_goal_minutes or 120)) * 100)|round|int, 100]|min %}
-<div class="card" style="margin-bottom: 2rem; border: 1.5px solid var(--accent-primary); background: var(--bg-card); position: relative; overflow: hidden; box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-    <div style="display: flex; align-items: center; gap: 0.85rem;">
-      <div style="background: rgba(59, 130, 246, 0.2); color: var(--accent-primary); width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+<div class="card daily-focus-card" style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <div class="focus-icon-box" style="width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
         <i class="fa-solid fa-bullseye"></i>
       </div>
       <div>
-        <h3 style="font-weight: 800; font-size: 1.15rem; color: var(--text-primary); margin-bottom: 0.15rem;">Daily Study Target Goal</h3>
-        <p style="font-size: 0.9rem; font-weight: 700; color: var(--accent-primary);">Target: 2 Hours (120 Mins) / Day</p>
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <h2 class="focus-title" style="font-weight: 800; font-size: 1.2rem; margin: 0;">Daily Focus Target</h2>
+          <span class="badge badge-primary focus-goal-badge">2h (120m) Goal</span>
+        </div>
+        <p class="focus-subtitle" style="font-size: 0.875rem; margin-top: 0.2rem; margin-bottom: 0;">
+          Logged <strong class="focus-minutes">{{ current_user.total_study_minutes }} minutes</strong> of focused work today.
+        </p>
       </div>
     </div>
-    <div style="font-size: 1.5rem; font-weight: 800; color: #10b981; background: rgba(16, 185, 129, 0.12); padding: 0.3rem 0.85rem; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3);">
-      {{ pct }}% Completed
+    <div>
+      <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-size: 0.95rem; padding: 0.4rem 1rem; border: 1px solid rgba(16, 185, 129, 0.3);">
+        <i class="fa-solid fa-circle-check"></i> {{ pct }}% Completed
+      </span>
     </div>
   </div>
 
-  <div style="width: 100%; height: 16px; background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; padding: 2px; overflow: hidden;">
-    <div style="width: {{ pct }}%; height: 100%; background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%); border-radius: 8px; transition: width 1s ease-in-out; box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);"></div>
+  <!-- Progress Bar Container -->
+  <div class="focus-progress-track" style="width: 100%; height: 14px; border-radius: 999px; overflow: hidden; position: relative;">
+    <div style="width: {{ pct }}%; height: 100%; background: linear-gradient(90deg, #6366f1 0%, #10b981 100%); border-radius: 999px; transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);"></div>
   </div>
 </div>
 
-<!-- Metrics Overview -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 2.5rem;">
-  <div class="card" style="display: flex; align-items: center; gap: 1rem;">
-    <div style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
-      <i class="fa-solid fa-users"></i>
+<!-- Metrics Overview Cards -->
+<div class="grid-metrics">
+  <div class="metric-card">
+    <div class="metric-icon-box" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
+      <i class="fa-solid fa-users-rectangle"></i>
     </div>
     <div>
-      <div style="font-size: 1.5rem; font-weight: 800;">{{ stats.total_joined }}</div>
-      <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Enrolled Rooms</div>
+      <div class="metric-value">{{ stats.total_joined }}</div>
+      <div class="metric-label">Enrolled Rooms</div>
     </div>
   </div>
 
-  <div class="card" style="display: flex; align-items: center; gap: 1rem;">
-    <div style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+  <div class="metric-card">
+    <div class="metric-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
       <i class="fa-solid fa-fire"></i>
     </div>
     <div>
-      <div style="font-size: 1.5rem; font-weight: 800;">{{ stats.streak_count }} Days</div>
-      <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Daily Study Streak</div>
+      <div class="metric-value">{{ stats.streak_count }} <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Days</span></div>
+      <div class="metric-label">Study Streak</div>
     </div>
   </div>
 
-  <div class="card" style="display: flex; align-items: center; gap: 1rem;">
-    <div style="background: rgba(16, 185, 129, 0.15); color: #10b981; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
-      <i class="fa-solid fa-clock"></i>
+  <div class="metric-card">
+    <div class="metric-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+      <i class="fa-solid fa-stopwatch"></i>
     </div>
     <div>
-      <div style="font-size: 1.5rem; font-weight: 800;">{{ stats.total_hours }} Hrs</div>
-      <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Total Study Time</div>
+      <div class="metric-value">{{ stats.total_hours }} <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">Hrs</span></div>
+      <div class="metric-label">Total Time</div>
     </div>
   </div>
 
-  <div class="card" style="display: flex; align-items: center; gap: 1rem;">
-    <div style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
-      <i class="fa-solid fa-bolt"></i>
+  <div class="metric-card">
+    <div class="metric-icon-box" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">
+      <i class="fa-solid fa-bolt-lightning"></i>
     </div>
     <div>
-      <div style="font-size: 1.5rem; font-weight: 800;">{{ stats.xp_points }} XP</div>
-      <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Gamification Points</div>
+      <div class="metric-value">{{ stats.xp_points }} <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary);">XP</span></div>
+      <div class="metric-label">Experience Points</div>
     </div>
   </div>
 </div>
 
 <!-- My Study Rooms Section -->
-<h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1.25rem;"><i class="fa-solid fa-folder-open"></i> My Study Rooms</h2>
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 2.5rem 0 1.25rem 0;">
+  <div>
+    <h2 style="font-size: 1.45rem; font-weight: 800; letter-spacing: -0.3px;">
+      <i class="fa-solid fa-folder-open" style="color: var(--accent-secondary); margin-right: 0.4rem;"></i> My Study Rooms
+    </h2>
+    <p style="color: var(--text-secondary); font-size: 0.875rem;">Spaces where you are actively studying or collaborating.</p>
+  </div>
+  {% if user_groups %}
+    <span class="badge badge-primary">{{ user_groups|length }} Active</span>
+  {% endif %}
+</div>
+
 {% if user_groups %}
   <div class="grid-3" style="margin-bottom: 3rem;">
     {% for g in user_groups %}
-      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+      <div class="card card-hoverable" style="display: flex; flex-direction: column; justify-content: space-between;">
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-            <h3 style="font-size: 1.2rem; font-weight: 700;">{{ g.name }}</h3>
-            <span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.85rem; gap: 0.5rem;">
+            <h3 style="font-size: 1.25rem; font-weight: 800; line-height: 1.3;">{{ g.name }}</h3>
+            <span class="badge badge-primary">
               {{ g.category or 'General' }}
             </span>
           </div>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
-            {{ g.description[:90] }}{% if g.description|length > 90 %}...{% endif %}
+          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.25rem; line-height: 1.5;">
+            {{ g.description[:110] }}{% if g.description|length > 110 %}...{% endif %}
           </p>
         </div>
 
         <div>
-          <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
-            <span><i class="fa-solid fa-key"></i> Code: <strong>{{ g.room_code }}</strong></span>
-            <span><i class="fa-solid fa-users"></i> {{ g.members|length }} members</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.825rem; color: var(--text-secondary); margin-bottom: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.85rem;">
+            <span style="font-family: var(--font-mono); background: var(--bg-input); padding: 0.2rem 0.5rem; border-radius: 6px;">
+              <i class="fa-solid fa-key" style="color: #f59e0b; margin-right: 4px;"></i> {{ g.room_code }}
+            </span>
+            <span><i class="fa-solid fa-users" style="margin-right: 4px;"></i> {{ g.members|length }} members</span>
           </div>
-          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+          <div style="display: flex; gap: 0.5rem;">
             <a href="{{ url_for('groups.view_group', group_id=g['_id']) }}" class="btn btn-primary" style="flex: 1;">
               Open Workspace <i class="fa-solid fa-arrow-right"></i>
             </a>
             {% if g.created_by|string == current_user.id|string %}
-              <form action="{{ url_for('groups.delete_group', group_id=g['_id']) }}" method="POST" onsubmit="return confirm('Delete this study room?');">
-                <button type="submit" class="btn btn-secondary" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); padding: 0.65rem 0.85rem;" title="Delete Room">
-                  <i class="fa-solid fa-trash"></i>
+              <form action="{{ url_for('groups.delete_group', group_id=g['_id']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this study room?');">
+                <button type="submit" class="btn btn-secondary" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);" title="Delete Room">
+                  <i class="fa-solid fa-trash-can"></i>
                 </button>
               </form>
             {% endif %}
@@ -127,99 +152,155 @@
     {% endfor %}
   </div>
 {% else %}
-  <div class="card" style="text-align: center; padding: 3rem; margin-bottom: 3rem;">
-    <i class="fa-solid fa-graduation-cap" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
-    <h3>No Study Rooms Joined Yet</h3>
-    <p style="color: var(--text-secondary); margin: 0.5rem 0 1.5rem 0;">Create a room or enter a 6-character code to join your peers.</p>
-    <a href="{{ url_for('groups.create_group') }}" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Create Study Room</a>
+  <div class="card" style="text-align: center; padding: 3.5rem 1.5rem; margin-bottom: 3rem;">
+    <div style="width: 72px; height: 72px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: var(--accent-secondary); display: inline-flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 1.25rem;">
+      <i class="fa-solid fa-graduation-cap"></i>
+    </div>
+    <h3 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 0.5rem;">No Study Rooms Yet</h3>
+    <p style="color: var(--text-secondary); max-width: 460px; margin: 0 auto 1.75rem auto; font-size: 0.95rem;">
+      Start your study journey by creating your first group room or enter a shared code to connect with your classmates.
+    </p>
+    <div style="display: flex; gap: 0.75rem; justify-content: center;">
+      <a href="{{ url_for('groups.create_group') }}" class="btn btn-primary">
+        <i class="fa-solid fa-plus"></i> Create Room
+      </a>
+      <button onclick="document.getElementById('joinModal').style.display='flex'" class="btn btn-secondary">
+        <i class="fa-solid fa-key"></i> Enter Code
+      </button>
+    </div>
   </div>
 {% endif %}
 
 <!-- Study Hours Analytics Table -->
-<h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1.25rem;"><i class="fa-solid fa-chart-line"></i> Study Analytics & Session Log</h2>
-<div class="card" style="margin-bottom: 3rem; overflow-x: auto;">
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 2.5rem 0 1.25rem 0;">
+  <div>
+    <h2 style="font-size: 1.45rem; font-weight: 800; letter-spacing: -0.3px;">
+      <i class="fa-solid fa-chart-line" style="color: #10b981; margin-right: 0.4rem;"></i> Study Analytics & Focus Log
+    </h2>
+    <p style="color: var(--text-secondary); font-size: 0.875rem;">Automatic session tracking powered by the Pomodoro focus timer.</p>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom: 3rem; overflow-x: auto; padding: 0.5rem 1rem;">
   {% if study_logs %}
-    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+    <table class="custom-table">
       <thead>
-        <tr style="border-bottom: 2px solid var(--border-color); color: var(--text-secondary);">
-          <th style="padding: 0.75rem 1rem;">Date & Time</th>
-          <th style="padding: 0.75rem 1rem;">Study Room / Topic</th>
-          <th style="padding: 0.75rem 1rem;">Duration</th>
-          <th style="padding: 0.75rem 1rem;">XP Earned</th>
-          <th style="padding: 0.75rem 1rem;">Status</th>
+        <tr>
+          <th>Date & Time</th>
+          <th>Study Room</th>
+          <th>Duration</th>
+          <th>XP Earned</th>
+          <th>Status</th>
         </tr>
       </thead>
       <tbody>
         {% for log in study_logs %}
-          <tr style="border-bottom: 1px solid var(--border-color);">
-            <td style="padding: 0.85rem 1rem; font-weight: 600;">{{ log.timestamp }}</td>
-            <td style="padding: 0.85rem 1rem; color: var(--accent-primary); font-weight: 700;">{{ log.group_name }}</td>
-            <td style="padding: 0.85rem 1rem;">{{ log.duration_minutes }} minutes</td>
-            <td style="padding: 0.85rem 1rem; color: #f59e0b; font-weight: 700;">+{{ log.xp_earned }} XP</td>
-            <td style="padding: 0.85rem 1rem;"><span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 0.15rem 0.5rem; border-radius: 8px; font-weight: 700; font-size: 0.75rem;">COMPLETED</span></td>
+          <tr>
+            <td style="font-weight: 600; color: var(--text-primary);">{{ log.timestamp }}</td>
+            <td style="color: var(--accent-secondary); font-weight: 700;">{{ log.group_name }}</td>
+            <td>{{ log.duration_minutes }} minutes</td>
+            <td style="color: #f59e0b; font-weight: 800;">+{{ log.xp_earned }} XP</td>
+            <td><span class="badge badge-success">Completed</span></td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
   {% else %}
-    <div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-      <p>No study sessions logged yet. Complete a Pomodoro Focus Session in any study room to start tracking your hours!</p>
+    <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-secondary);">
+      <i class="fa-regular fa-clock" style="font-size: 2rem; margin-bottom: 0.75rem; opacity: 0.6;"></i>
+      <p style="font-size: 0.95rem;">No study sessions logged yet. Complete a Pomodoro session in any room to record your focused hours!</p>
     </div>
   {% endif %}
 </div>
 
-<!-- Public Study Rooms Discovery -->
-<h2 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 1.25rem;"><i class="fa-solid fa-compass"></i> Discover Public Rooms</h2>
+<!-- Discover Public Rooms -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin: 2.5rem 0 1.25rem 0;">
+  <div>
+    <h2 style="font-size: 1.45rem; font-weight: 800; letter-spacing: -0.3px;">
+      <i class="fa-solid fa-compass" style="color: #06b6d4; margin-right: 0.4rem;"></i> Discover Community Rooms
+    </h2>
+    <p style="color: var(--text-secondary); font-size: 0.875rem;">Explore study spaces curated across diverse topics.</p>
+  </div>
+</div>
+
 <div class="grid-3">
   {% for g in public_groups %}
-    <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-        <h3 style="font-size: 1.1rem; font-weight: 700;">{{ g.name }}</h3>
-        <span style="background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 700;">
-          {{ g.category or 'General' }}
-        </span>
+    <div class="card card-hoverable" style="display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 0.5rem;">
+          <h3 style="font-size: 1.15rem; font-weight: 700;">{{ g.name }}</h3>
+          <span class="badge badge-success">
+            {{ g.category or 'General' }}
+          </span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.25rem; line-height: 1.5;">
+          {{ g.description[:90] }}{% if g.description|length > 90 %}...{% endif %}
+        </p>
       </div>
-      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">
-        {{ g.description[:80] }}...
-      </p>
-      <a href="{{ url_for('groups.view_group', group_id=g['_id']) }}" class="btn btn-secondary btn-sm" style="width: 100%;">
-        View & Join Room
-      </a>
+      <div>
+        <a href="{{ url_for('groups.view_group', group_id=g['_id']) }}" class="btn btn-secondary btn-sm" style="width: 100%;">
+          View & Join Room <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
     </div>
   {% endfor %}
 </div>
 
 <!-- Modal: Study Certificate -->
-<div id="certModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); backdrop-filter: blur(6px); z-index: 1000; align-items: center; justify-content: center;">
-  <div class="card" style="width: 100%; max-width: 550px; position: relative; text-align: center; border: 2px solid #f59e0b; background: #0f172a; padding: 2.5rem;">
-    <button onclick="document.getElementById('certModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer;">
-      <i class="fa-solid fa-times"></i>
+<div id="certModal" class="modal-overlay">
+  <div class="modal-content" style="max-width: 540px; text-align: center; border: 2px solid #f59e0b; background: #0b1120;">
+    <button onclick="document.getElementById('certModal').style.display='none'" class="modal-close-btn" aria-label="Close">
+      <i class="fa-solid fa-xmark"></i>
     </button>
-    <div style="font-size: 3rem; color: #f59e0b; margin-bottom: 0.5rem;"><i class="fa-solid fa-award"></i></div>
-    <h2 style="font-size: 1.6rem; font-weight: 800; color: #f59e0b;" id="certTitle">Certificate of Achievement</h2>
-    <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0.5rem 0 1.5rem 0;">PROUDLY PRESENTED TO</p>
-    <h1 style="font-size: 2.2rem; font-weight: 800; text-decoration: underline;" id="certName">{{ current_user.username }}</h1>
+    
+    <div style="font-size: 3.5rem; color: #f59e0b; margin-bottom: 0.5rem;">
+      <i class="fa-solid fa-award"></i>
+    </div>
+    
+    <div style="text-transform: uppercase; font-size: 0.8rem; letter-spacing: 2px; color: #f59e0b; font-weight: 800; margin-bottom: 0.25rem;">
+      Verified Study Credential
+    </div>
+    <h2 style="font-size: 1.6rem; font-weight: 800; color: #f8fafc;" id="certTitle">Certificate of Achievement</h2>
+    
+    <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.75rem 0 1.25rem 0;">PROUDLY PRESENTED TO</p>
+    
+    <h1 style="font-size: 2.2rem; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; border-bottom: 2px solid rgba(245, 158, 11, 0.4); display: inline-block; padding-bottom: 0.25rem;" id="certName">
+      {{ current_user.username }}
+    </h1>
+    
     <p style="font-size: 0.95rem; color: var(--text-secondary); margin: 1.5rem 0; line-height: 1.6;">
-      For outstanding dedication, completing <strong id="certHours">0</strong> study hours, maintaining a <strong id="certStreak">1</strong>-day streak, and earning <strong id="certXP">50</strong> XP points on the Virtual Study Group Platform.
+      For exceptional dedication, completing <strong id="certHours" style="color: #fff;">0</strong> focused study hours, sustaining an unbroken <strong id="certStreak" style="color: #fff;">1</strong>-day streak, and amassing <strong id="certXP" style="color: #fff;">50</strong> XP points on the platform.
     </p>
-    <div style="font-size: 0.8rem; color: var(--text-secondary);" id="certDate">Issued on: August 2026</div>
+    
+    <div style="font-size: 0.8rem; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;" id="certDate">
+      Issued on: August 2026
+    </div>
   </div>
 </div>
 
 <!-- Modal: Join Room by Code -->
-<div id="joinModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
-  <div class="card" style="width: 100%; max-width: 420px; position: relative;">
-    <button onclick="document.getElementById('joinModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer;">
-      <i class="fa-solid fa-times"></i>
+<div id="joinModal" class="modal-overlay">
+  <div class="modal-content">
+    <button onclick="document.getElementById('joinModal').style.display='none'" class="modal-close-btn" aria-label="Close">
+      <i class="fa-solid fa-xmark"></i>
     </button>
-    <h3 style="margin-bottom: 1rem; font-weight: 700;"><i class="fa-solid fa-key"></i> Join Room via Code</h3>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+      <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(99, 102, 241, 0.15); color: var(--accent-secondary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+        <i class="fa-solid fa-key"></i>
+      </div>
+      <div>
+        <h3 style="font-weight: 800; font-size: 1.25rem;">Join Study Room</h3>
+        <p style="font-size: 0.85rem; color: var(--text-secondary);">Enter the 6-character room access code</p>
+      </div>
+    </div>
+
     <form action="{{ url_for('groups.join_group') }}" method="POST">
       {{ join_form.hidden_tag() }}
       <div class="form-group">
         {{ join_form.room_code.label(class="form-label") }}
-        {{ join_form.room_code(class="form-control", placeholder="e.g. A1B2C3", style="text-transform: uppercase; letter-spacing: 2px; font-weight: 700; text-align: center; font-size: 1.2rem;") }}
+        {{ join_form.room_code(class="form-control", placeholder="e.g. VSG902", style="text-transform: uppercase; letter-spacing: 3px; font-weight: 800; text-align: center; font-size: 1.25rem; font-family: var(--font-mono);") }}
       </div>
-      {{ join_form.submit(class="btn btn-primary", style="width: 100%;") }}
+      {{ join_form.submit(class="btn btn-primary", style="width: 100%; padding: 0.8rem;") }}
     </form>
   </div>
 </div>

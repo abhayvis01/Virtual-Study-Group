@@ -3,14 +3,14 @@
 {% block title %}Create Study Room - Virtual Study Group{% endblock %}
 
 {% block content %}
-<div style="max-width: 550px; margin: 2rem auto;">
-  <div class="card">
-    <div style="text-align: center; margin-bottom: 1.5rem;">
-      <div style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; width: 60px; height: 60px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 0.75rem;">
-        <i class="fa-solid fa-users"></i>
+<div style="max-width: 580px; margin: 2.5rem auto;">
+  <div class="card" style="padding: 2.25rem;">
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <div style="background: rgba(99, 102, 241, 0.15); color: var(--accent-secondary); width: 62px; height: 62px; border-radius: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; margin-bottom: 1rem;">
+        <i class="fa-solid fa-users-rectangle"></i>
       </div>
-      <h2 style="font-size: 1.6rem; font-weight: 800;">Create New Study Room</h2>
-      <p style="color: var(--text-secondary); font-size: 0.9rem;">Set up a collaborative room for your group or project.</p>
+      <h2 style="font-size: 1.75rem; font-weight: 800; letter-spacing: -0.5px;">Create Study Room</h2>
+      <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.25rem;">Set up an interactive collaboration space for your course or cohort.</p>
     </div>
 
     <form method="POST" action="{{ url_for('groups.create_group') }}">
@@ -18,9 +18,9 @@
 
       <div class="form-group">
         {{ form.name.label(class="form-label") }}
-        {{ form.name(class="form-control", placeholder="e.g. CS401 Final Year Project Group") }}
+        {{ form.name(class="form-control", placeholder="e.g. CS401 Distributed Systems Prep") }}
         {% if form.name.errors %}
-          <div style="color: #ef4444; font-size: 0.8rem; margin-top: 0.25rem;">{{ form.name.errors[0] }}</div>
+          <div style="color: #ef4444; font-size: 0.8rem; margin-top: 0.35rem;"><i class="fa-solid fa-circle-exclamation"></i> {{ form.name.errors[0] }}</div>
         {% endif %}
       </div>
 
@@ -31,13 +31,16 @@
 
       <div class="form-group">
         {{ form.description.label(class="form-label") }}
-        {{ form.description(class="form-control", rows="4", placeholder="Describe the study goals, topics covered, or team guidelines...") }}
+        {{ form.description(class="form-control", rows="4", placeholder="Describe the study goals, topics covered, schedule, or team guidelines...") }}
         {% if form.description.errors %}
-          <div style="color: #ef4444; font-size: 0.8rem; margin-top: 0.25rem;">{{ form.description.errors[0] }}</div>
+          <div style="color: #ef4444; font-size: 0.8rem; margin-top: 0.35rem;"><i class="fa-solid fa-circle-exclamation"></i> {{ form.description.errors[0] }}</div>
         {% endif %}
       </div>
 
-      {{ form.submit(class="btn btn-primary", style="width: 100%; padding: 0.85rem;") }}
+      <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary" style="flex: 1;">Cancel</a>
+        {{ form.submit(class="btn btn-primary", style="flex: 2; padding: 0.85rem;") }}
+      </div>
     </form>
   </div>
 </div>

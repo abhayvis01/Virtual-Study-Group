@@ -4,10 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Virtual Study Group{% endblock %} - Collaborative Learning</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
-  <!-- Firebase JS SDK (Compat mode for seamless web integration) -->
+  <!-- Modern Font & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  
+  <!-- Firebase JS SDK (Compat mode) -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -18,56 +25,93 @@
   <!-- Navigation Bar -->
   <nav class="navbar">
     <a href="{{ url_for('main.index') }}" class="nav-brand">
-      <i class="fa-solid fa-graduation-cap"></i> VirtualStudyGroup
+      <div class="nav-brand-icon">
+        <i class="fa-solid fa-graduation-cap"></i>
+      </div>
+      <span>Virtual<span style="font-weight: 400; opacity: 0.9;">StudyGroup</span></span>
     </a>
 
-    <!-- Universal Search Input -->
-    <div style="position: relative; max-width: 340px; width: 100%; margin: 0 1.5rem;">
-      <input type="text" id="globalSearchInput" class="form-control" placeholder="Search rooms, notes, topics..." style="padding-left: 2.3rem; height: 38px; font-size: 0.85rem; border-radius: 20px;" oninput="performGlobalSearch()">
-      <i class="fa-solid fa-search" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.85rem;"></i>
-      <div id="searchResultsDropdown" style="display: none; position: absolute; top: 45px; left: 0; width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); box-shadow: var(--shadow-main); z-index: 1000; padding: 0.5rem; max-height: 250px; overflow-y: auto;"></div>
+    <!-- Global Instant Search -->
+    <div class="nav-search-wrap">
+      <input type="text" id="globalSearchInput" class="nav-search-input" placeholder="Search rooms, notes, topics..." oninput="performGlobalSearch()">
+      <i class="fa-solid fa-search nav-search-icon"></i>
+      <div id="searchResultsDropdown" class="search-dropdown"></div>
     </div>
 
     <ul class="nav-links">
       {% if current_user.is_authenticated %}
-        <li><a href="{{ url_for('main.dashboard') }}" class="nav-link"><i class="fa-solid fa-gauge"></i> Dashboard</a></li>
-        <li><a href="{{ url_for('groups.create_group') }}" class="nav-link"><i class="fa-solid fa-plus-circle"></i> Create Room</a></li>
+        <li>
+          <a href="{{ url_for('main.dashboard') }}" class="nav-link">
+            <i class="fa-solid fa-gauge-high"></i> Dashboard
+          </a>
+        </li>
+        <li>
+          <button type="button" onclick="toggleGlobalAiModal()" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 0.4rem; border-color: rgba(168, 85, 247, 0.4); color: #c084fc; cursor: pointer;" title="Ask AI Study Assistant">
+            <i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> <span>AI Helper</span>
+          </button>
+        </li>
+        <li>
+          <a href="{{ url_for('groups.create_group') }}" class="btn btn-secondary btn-sm">
+            <i class="fa-solid fa-plus"></i> Create Room
+          </a>
+        </li>
         
         <!-- Live Streak & XP Badge -->
         <li>
-          <span class="badge-streak">
-            🔥 {{ current_user.streak_count or 1 }} Day Streak &nbsp;|&nbsp; ⚡ {{ current_user.xp_points or 50 }} XP
+          <span class="badge-streak" title="Daily Activity Streak & Earned XP">
+            <i class="fa-solid fa-fire-flame-curved" style="color: #f59e0b;"></i> {{ current_user.streak_count or 1 }}d &nbsp;|&nbsp; 
+            <i class="fa-solid fa-bolt" style="color: #6366f1;"></i> {{ current_user.xp_points or 50 }} XP
           </span>
         </li>
 
+        <!-- User Profile Pill -->
         <li>
-          <span style="font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem;">
-            <i class="fa-solid fa-user-circle" style="font-size: 1.1rem; color: var(--accent-primary);"></i> {{ current_user.username }}
-          </span>
+          <div class="user-profile-pill">
+            <span class="user-avatar-circle">
+              {{ current_user.username[0]|upper }}
+            </span>
+            <span>{{ current_user.username }}</span>
+          </div>
         </li>
-        <li><a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-sign-out-alt"></i> Logout</a></li>
+        <li>
+          <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary btn-sm" title="Log Out">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </a>
+        </li>
       {% else %}
-        <li><a href="{{ url_for('auth.login') }}" class="nav-link">Login</a></li>
+        <li><a href="{{ url_for('auth.login') }}" class="nav-link">Log In</a></li>
         <li><a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Get Started</a></li>
       {% endif %}
 
+      <!-- Theme Switcher Button -->
       <li>
-        <button id="themeToggle" class="theme-toggle">
-          <i class="fa-solid fa-moon"></i> Theme
+        <button id="themeToggle" class="theme-toggle" aria-label="Toggle Theme">
+          <i class="fa-solid fa-moon"></i> <span>Dark</span>
         </button>
       </li>
     </ul>
   </nav>
 
-  <!-- Main Content Body -->
+  <!-- Main Workspace Area -->
   <main class="main-container">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div class="flash-container">
           {% for category, message in messages %}
             <div class="flash-message flash-{{ category }}">
-              <span><i class="fa-solid fa-info-circle"></i> {{ message }}</span>
-              <button onclick="this.parentElement.remove()" style="background:none; border:none; color:inherit; cursor:pointer;"><i class="fa-solid fa-times"></i></button>
+              <div style="display: flex; align-items: center; gap: 0.65rem;">
+                {% if category == 'success' %}
+                  <i class="fa-solid fa-circle-check" style="font-size: 1.1rem;"></i>
+                {% elif category in ['danger', 'error'] %}
+                  <i class="fa-solid fa-circle-exclamation" style="font-size: 1.1rem;"></i>
+                {% else %}
+                  <i class="fa-solid fa-circle-info" style="font-size: 1.1rem;"></i>
+                {% endif %}
+                <span>{{ message }}</span>
+              </div>
+              <button onclick="this.closest('.flash-message').remove()" style="background:none; border:none; color:inherit; cursor:pointer; opacity: 0.7;" aria-label="Dismiss">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
             </div>
           {% endfor %}
         </div>
@@ -77,22 +121,35 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Footer -->
+  <!-- Polished Footer -->
   <footer>
-    <p>&copy; 2026 Virtual Study Group Platform. All Rights Reserved. • <a href="{{ url_for('main.terms') }}" style="color: var(--text-secondary); text-decoration: underline;">Terms & Conditions</a></p>
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <i class="fa-solid fa-graduation-cap" style="color: var(--accent-secondary);"></i>
+        <span>&copy; 2026 <strong>Virtual Study Group</strong>. All Rights Reserved.</span>
+      </div>
+      <div style="display: flex; gap: 1.5rem; align-items: center;">
+        <a href="{{ url_for('main.terms') }}"><i class="fa-solid fa-shield-halved"></i> Terms & Privacy</a>
+        <a href="https://github.com/abhayvis01/Virtual-Study-Group" target="_blank"><i class="fa-brands fa-github"></i> GitHub</a>
+      </div>
+    </div>
   </footer>
 
   <script>
-    // Initialize Firebase Web SDK
+    // Initialize Firebase Web SDK safely
     const firebaseConfig = {{ firebase_config | tojson }};
     if (firebaseConfig && firebaseConfig.apiKey) {
-      firebase.initializeApp(firebaseConfig);
-      if (firebase.analytics) {
-        firebase.analytics();
+      try {
+        firebase.initializeApp(firebaseConfig);
+        if (firebase.analytics) {
+          firebase.analytics();
+        }
+      } catch (err) {
+        console.warn("Firebase Init notice:", err);
       }
     }
 
-    // Universal Search JS
+    // Universal Global Instant Search
     let searchTimeout = null;
     function performGlobalSearch() {
       const q = document.getElementById('globalSearchInput').value.trim();
@@ -108,25 +165,46 @@
               const groups = res.results.groups || [];
               const resources = res.results.resources || [];
               if (groups.length === 0 && resources.length === 0) {
-                drop.innerHTML = '<div style="padding:0.5rem; color:var(--text-secondary); font-size:0.85rem;">No matches found</div>';
+                drop.innerHTML = '<div style="padding:0.75rem; color:var(--text-secondary); font-size:0.85rem; text-align:center;"><i class="fa-solid fa-search"></i> No matching rooms or resources found</div>';
               } else {
-                drop.innerHTML = groups.map(g => `
-                  <a href="/groups/${g._id}" style="display:block; padding:0.4rem; color:var(--text-primary); text-decoration:none; border-bottom:1px solid var(--border-color); font-size:0.85rem;">
-                    <strong>🏫 ${g.name}</strong> <span style="font-size:0.75rem; color:var(--text-secondary);">(${g.category})</span>
-                  </a>
-                `).join('') + resources.map(r => `
-                  <div style="padding:0.4rem; font-size:0.85rem; color:var(--text-secondary);">
-                    📄 ${r.name} <span style="font-size:0.75rem; text-transform:uppercase;">(${r.type})</span>
-                  </div>
-                `).join('');
+                let html = '';
+                if (groups.length > 0) {
+                  html += groups.map(g => `
+                    <a href="/groups/${g._id}">
+                      <span><i class="fa-solid fa-users-viewfinder" style="color:var(--accent-secondary); margin-right:6px;"></i> <strong>${g.name}</strong></span>
+                      <span class="badge badge-primary">${g.category || 'General'}</span>
+                    </a>
+                  `).join('');
+                }
+                if (resources.length > 0) {
+                  html += resources.map(r => `
+                    <div>
+                      <span><i class="fa-solid fa-file-lines" style="color:var(--text-muted); margin-right:6px;"></i> ${r.name}</span>
+                      <span class="badge" style="background:var(--bg-input); font-size:0.7rem;">${r.type}</span>
+                    </div>
+                  `).join('');
+                }
+                drop.innerHTML = html;
               }
               drop.style.display = 'block';
             }
+          })
+          .catch(() => {
+            drop.style.display = 'none';
           });
-      }, 300);
+      }, 250);
     }
 
-    // Theme Toggle
+    // Close search dropdown on click outside
+    document.addEventListener('click', function(e) {
+      const searchWrap = document.querySelector('.nav-search-wrap');
+      if (searchWrap && !searchWrap.contains(e.target)) {
+        const drop = document.getElementById('searchResultsDropdown');
+        if (drop) drop.style.display = 'none';
+      }
+    });
+
+    // Theme Toggle Controller
     const themeBtn = document.getElementById('themeToggle');
     const htmlElem = document.documentElement;
 
@@ -144,10 +222,263 @@
 
     function updateThemeBtnIcon(theme) {
       themeBtn.innerHTML = theme === 'dark' 
-        ? '<i class="fa-solid fa-sun"></i> Light' 
-        : '<i class="fa-solid fa-moon"></i> Dark';
+        ? '<i class="fa-solid fa-moon"></i> <span>Dark</span>' 
+        : '<i class="fa-solid fa-sun"></i> <span>Light</span>';
+    }
+
+    // ==========================================================
+    // Gemini-Grade Global AI Study Assistant Controller
+    // ==========================================================
+    function toggleGlobalAiModal(show) {
+      const modal = document.getElementById('globalAiModal');
+      if (!modal) return;
+      const isVisible = modal.style.display === 'flex';
+      const targetState = (typeof show === 'boolean') ? show : !isVisible;
+      modal.style.display = targetState ? 'flex' : 'none';
+      if (targetState) {
+        setTimeout(() => document.getElementById('globalAiInput')?.focus(), 150);
+      }
+    }
+
+    function handleGlobalAiBackdropClick(e) {
+      if (e.target.id === 'globalAiModal') {
+        toggleGlobalAiModal(false);
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') toggleGlobalAiModal(false);
+    });
+
+    function setGlobalAiPrompt(text) {
+      const input = document.getElementById('globalAiInput');
+      if (input) {
+        input.value = text;
+        submitGlobalAiPrompt();
+      }
+    }
+
+    function resetGlobalAiChat() {
+      const stream = document.getElementById('globalAiChatStream');
+      if (!stream) return;
+      stream.innerHTML = `
+        <div class="ai-bubble-bot" style="width: 100%;">
+          <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:var(--accent-secondary);margin-bottom:0.5rem;">
+            <i class="fa-solid fa-graduation-cap"></i> Welcome to Virtual Study Group AI
+          </div>
+          <p style="margin:0 0 0.75rem 0;font-size:0.9rem;line-height:1.5;">
+            I am your dedicated academic co-pilot. I can explain complex syllabus concepts, generate practice quizzes, review Python/JS code, summarize topics, and fetch your real-time study stats and rooms.
+          </p>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <button type="button" onclick="setGlobalAiPrompt('Show my study stats and progress')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">📊 My Stats</button>
+            <button type="button" onclick="setGlobalAiPrompt('List my active study rooms')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">🎓 My Rooms</button>
+            <button type="button" onclick="setGlobalAiPrompt('Generate a 3-question practice quiz on DBMS with answers')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">📝 DBMS Quiz</button>
+            <button type="button" onclick="setGlobalAiPrompt('Explain ACID properties in databases with examples')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">💡 ACID Properties</button>
+            <button type="button" onclick="setGlobalAiPrompt('Write a clean Python function for Binary Search with comments')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">💻 Binary Search</button>
+            <button type="button" onclick="setGlobalAiPrompt('Explain the Pomodoro Technique to maximize retention')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">⏱️ Pomodoro Tips</button>
+          </div>
+        </div>
+      `;
+      const input = document.getElementById('globalAiInput');
+      if (input) input.value = '';
+    }
+
+    function renderAiMarkdown(text) {
+      if (!text) return '';
+      let html = text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        // Code blocks
+        .replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+          const trimmed = code.trim();
+          return `<div class="ai-code-block"><div class="ai-code-header"><span class="ai-code-lang">${lang || 'code'}</span><button class="ai-copy-snippet" onclick="copyAiCodeSnippet(this)" data-code="${encodeURIComponent(trimmed)}"><i class="fa-regular fa-copy"></i> Copy Code</button></div><pre><code>${trimmed}</code></pre></div>`;
+        })
+        // Headings
+        .replace(/^## (.+)$/gm, '<h2 class="ai-h2">$1</h2>')
+        .replace(/^### (.+)$/gm, '<h3 class="ai-h3">$1</h3>')
+        .replace(/^#### (.+)$/gm, '<h4 class="ai-h4">$1</h4>')
+        // Markdown Links
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+        // Bold + Italic
+        .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // Inline code
+        .replace(/`([^`]+)`/g, '<code class="ai-inline-code">$1</code>')
+        // Lists
+        .replace(/^[\*\-] (.+)$/gm, '<li>$1</li>')
+        .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>[\s\S]*?<\/li>)+/g, m => `<ul class="ai-list">${m}</ul>`)
+        // Horizontal Rule
+        .replace(/^---+$/gm, '<hr class="ai-hr">')
+        // Paragraphs
+        .replace(/\n\n+/g, '</p><p class="ai-p">')
+        .replace(/\n/g, '<br>');
+
+      return `<div class="ai-p">${html}</div>`;
+    }
+
+    function copyAiCodeSnippet(btn) {
+      const code = decodeURIComponent(btn.getAttribute('data-code'));
+      navigator.clipboard.writeText(code).then(() => {
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        setTimeout(() => { btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy Code'; }, 2000);
+      });
+    }
+
+    function copyBotBubble(btn) {
+      const bubble = btn.closest('.ai-bubble-bot');
+      if (!bubble) return;
+      const content = bubble.querySelector('.ai-msg-content')?.innerText || bubble.innerText;
+      navigator.clipboard.writeText(content).then(() => {
+        btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+        setTimeout(() => { btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy'; }, 2000);
+      });
+    }
+
+    function submitGlobalAiPrompt() {
+      const input = document.getElementById('globalAiInput');
+      const prompt = input ? input.value.trim() : '';
+      if (!prompt) return;
+
+      const stream = document.getElementById('globalAiChatStream');
+      const sendBtn = document.getElementById('globalAiSubmitBtn');
+
+      // 1. Append User Bubble
+      const userBubble = document.createElement('div');
+      userBubble.className = 'ai-bubble-user';
+      userBubble.innerText = prompt;
+      stream.appendChild(userBubble);
+
+      // Clear input
+      input.value = '';
+
+      // 2. Append Loading Placeholder Bubble
+      const loadingBubble = document.createElement('div');
+      loadingBubble.className = 'ai-bubble-bot';
+      loadingBubble.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.75rem;color:var(--accent-secondary);">
+          <i class="fa-solid fa-wand-magic-sparkles fa-spin" style="font-size:1.15rem;"></i>
+          <span style="font-weight:600;font-size:0.9rem;">Synthesizing response...</span>
+        </div>`;
+      stream.appendChild(loadingBubble);
+      stream.scrollTop = stream.scrollHeight;
+
+      if (sendBtn) {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+      }
+
+      fetch('/api/ai/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: prompt })
+      })
+      .then(async r => {
+        if (!r.ok) {
+          if (r.status === 401 || r.status === 302) {
+            throw new Error('Please log in to chat with the AI Assistant.');
+          }
+          const errText = await r.text();
+          try {
+            const errObj = JSON.parse(errText);
+            throw new Error(errObj.answer || errObj.message || `Error ${r.status}`);
+          } catch(e) {
+            throw new Error(`Error ${r.status}`);
+          }
+        }
+        return r.json();
+      })
+      .then(res => {
+        if (sendBtn) {
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send';
+        }
+
+        const answerText = res.answer || 'No response generated.';
+        loadingBubble.innerHTML = `
+          <div class="ai-msg-content">${renderAiMarkdown(answerText)}</div>
+          <div class="ai-source-tag">
+            <span><i class="fa-solid fa-sparkles" style="color:#a855f7;"></i> ${res.source || 'Virtual Study AI'}</span>
+            <button type="button" onclick="copyBotBubble(this)" class="btn btn-secondary btn-sm" style="padding:0.15rem 0.45rem;font-size:0.72rem;">
+              <i class="fa-regular fa-copy"></i> Copy
+            </button>
+          </div>
+        `;
+        stream.scrollTop = stream.scrollHeight;
+      })
+      .catch(err => {
+        if (sendBtn) {
+          sendBtn.disabled = false;
+          sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send';
+        }
+        loadingBubble.innerHTML = `<span style="color:#ef4444;"><i class="fa-solid fa-circle-exclamation"></i> ${err.message}</span>`;
+        stream.scrollTop = stream.scrollHeight;
+      });
     }
   </script>
+
+  <!-- Global Floating AI Assistant FAB (Accessible anywhere in the app) -->
+  <button id="globalAiFab" class="global-ai-fab" onclick="toggleGlobalAiModal()" title="Ask AI Study Assistant">
+    <i class="fa-solid fa-wand-magic-sparkles"></i>
+    <span>Ask AI</span>
+  </button>
+
+  <!-- Global AI Study Assistant Modal -->
+  <div id="globalAiModal" class="global-ai-modal-overlay" onclick="handleGlobalAiBackdropClick(event)">
+    <div class="global-ai-modal" onclick="event.stopPropagation()">
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.85rem; border-bottom: 1px solid var(--border-color); margin-bottom: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="background: linear-gradient(135deg, rgba(79, 70, 229, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%); color: #a855f7; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; border: 1px solid rgba(168, 85, 247, 0.3);">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <div>
+            <h3 style="font-size: 1.2rem; font-weight: 800; margin: 0;">
+              Virtual Study Group AI
+            </h3>
+            <p style="font-size: 0.775rem; color: var(--text-secondary); margin: 0.15rem 0 0 0;">Explanations, quizzes, code review, live stats & study room shortcuts</p>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+          <button type="button" onclick="resetGlobalAiChat()" class="btn btn-secondary btn-sm" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;" title="Start New Chat">
+            <i class="fa-solid fa-arrows-rotate"></i> Reset
+          </button>
+          <button type="button" onclick="toggleGlobalAiModal(false)" class="btn btn-secondary btn-sm" style="padding: 0.35rem 0.65rem; border-radius: 8px;" title="Close Modal">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Conversational Chat Stream -->
+      <div id="globalAiChatStream" class="global-ai-chat-stream">
+        <div class="ai-bubble-bot" style="width: 100%;">
+          <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:var(--accent-secondary);margin-bottom:0.5rem;">
+            <i class="fa-solid fa-graduation-cap"></i> Welcome to Virtual Study Group AI
+          </div>
+          <p style="margin:0 0 0.75rem 0;font-size:0.9rem;line-height:1.5;">
+            I am your dedicated academic co-pilot. I can explain complex syllabus concepts, generate practice quizzes, review Python/JS code, summarize topics, and fetch your real-time study stats and rooms.
+          </p>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+            <button type="button" onclick="setGlobalAiPrompt('Show my study stats and progress')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">📊 My Stats</button>
+            <button type="button" onclick="setGlobalAiPrompt('List my active study rooms')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">🎓 My Rooms</button>
+            <button type="button" onclick="setGlobalAiPrompt('Generate a 3-question practice quiz on DBMS with answers')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">📝 DBMS Quiz</button>
+            <button type="button" onclick="setGlobalAiPrompt('Explain ACID properties in databases with examples')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">💡 ACID Properties</button>
+            <button type="button" onclick="setGlobalAiPrompt('Write a clean Python function for Binary Search with comments')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">💻 Binary Search</button>
+            <button type="button" onclick="setGlobalAiPrompt('Explain the Pomodoro Technique to maximize retention')" class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem;">⏱️ Pomodoro Tips</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Row -->
+      <div style="display: flex; gap: 0.5rem; align-items: center; padding-top: 0.75rem; border-top: 1px solid var(--border-color);">
+        <input type="text" id="globalAiInput" class="form-control" placeholder="Ask anything: 'show my stats', 'quiz on DBMS', 'explain recursion'..." onkeypress="if(event.key === 'Enter') submitGlobalAiPrompt()">
+        <button type="button" onclick="submitGlobalAiPrompt()" id="globalAiSubmitBtn" class="btn btn-primary" style="padding: 0.65rem 1.25rem; white-space: nowrap; display: flex; align-items: center; gap: 0.4rem;">
+          <i class="fa-solid fa-paper-plane"></i> <span>Send</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   {% block scripts %}{% endblock %}
 </body>
 </html>

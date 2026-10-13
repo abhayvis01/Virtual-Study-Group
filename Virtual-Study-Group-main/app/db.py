@@ -32,6 +32,10 @@ class MongoWrapper:
             self.client = None
             self.db = None
             self.is_connected = False
+            
+            # Ensure in-memory fallback indexes and seed accounts
+            from app.services.mongo_service import ensure_indexes
+            ensure_indexes()
 
 mongo = MongoWrapper()
 firebase_app = None

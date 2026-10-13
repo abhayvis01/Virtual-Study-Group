@@ -1,12 +1,23 @@
 {% extends 'base.html' %}
 
-{% block title %}Page Not Found - 404{% endblock %}
+{% block title %}Page Not Found (404) - Virtual Study Group{% endblock %}
 
 {% block content %}
-<div style="text-align: center; padding: 4rem 1rem;">
-  <h1 style="font-size: 5rem; font-weight: 800; color: #ef4444;">404</h1>
-  <h2 style="margin-bottom: 1rem;">Page Not Found</h2>
-  <p style="color: var(--text-secondary); margin-bottom: 2rem;">The page or study room you are looking for does not exist or has been moved.</p>
-  <a href="{{ url_for('main.index') }}" class="btn btn-primary"><i class="fa-solid fa-home"></i> Back to Safety</a>
+<div style="text-align: center; padding: 5rem 1.5rem; max-width: 600px; margin: 0 auto;">
+  <div style="font-size: 5rem; font-weight: 800; background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -2px; line-height: 1; margin-bottom: 1rem;">
+    404
+  </div>
+  <h2 style="font-size: 1.85rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 0.75rem;">Page or Study Room Not Found</h2>
+  <p style="color: var(--text-secondary); margin-bottom: 2rem; font-size: 1rem; line-height: 1.6;">
+    The page or study room you are trying to visit might have been deleted, had its room code modified, or is temporarily inaccessible.
+  </p>
+  <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">
+      <i class="fa-solid fa-gauge-high"></i> Go to Dashboard
+    </a>
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">
+      <i class="fa-solid fa-house"></i> Home
+    </a>
+  </div>
 </div>
 {% endblock %}

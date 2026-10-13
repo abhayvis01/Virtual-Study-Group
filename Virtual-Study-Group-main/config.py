@@ -11,6 +11,10 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'AIzaSyCmeN6ZIODz3G3p09ELhVJWxsPJJeLEGn0')
     DEBUG = os.environ.get('DEBUG', 'True').lower() in ['true', '1', 't']
     
+    # AI Assistant & Code Generation APIs (Gemini / OpenAI)
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+    OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+    
     # MongoDB Configuration
     MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://vhost150506_db_user:[EMAIL_ADDRESS]/virtual_study_group')
     MONGO_DBNAME = os.environ.get('MONGO_DBNAME', 'virtual_study_group')

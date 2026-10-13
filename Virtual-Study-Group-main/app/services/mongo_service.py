@@ -20,7 +20,7 @@ _MEMORY_DB = {
 }
 
 def ensure_indexes():
-    """Create MongoDB Atlas performance indexes for fast query execution."""
+    """Create MongoDB Atlas performance indexes and seed default demo student account."""
     if mongo.is_connected and mongo.db is not None:
         try:
             mongo.db.users.create_index('username', unique=True)
@@ -33,6 +33,22 @@ def ensure_indexes():
             print("[DBMS Engine] MongoDB Atlas compound performance indexes verified.")
         except Exception as e:
             print(f"[DBMS Index Warning] Could not ensure indexes: {e}")
+            
+    # Auto-seed a ready-to-use demo account: student / student123
+    seed_demo_account()
+
+def seed_demo_account():
+    try:
+        existing = User.get_by_username("student")
+        if not existing:
+            demo_user = User.create(
+                username="student",
+                email="student@studygroup.local",
+                password="student123"
+            )
+            print("[Auth Engine] Seeded default demo account: username='student', password='student123'")
+    except Exception as e:
+        print(f"[Auth Engine] Demo account check notice: {e}")
 
 class User(UserMixin):
     def __init__(self, user_data):
@@ -58,21 +74,27 @@ class User(UserMixin):
 
     @staticmethod
     def get_by_username(username):
+        u_clean = username.strip()
         if mongo.is_connected and mongo.db is not None:
-            data = mongo.db.users.find_one({'username': username})
+            data = mongo.db.users.find_one({'username': {'$regex': f'^{u_clean}$', '$options': 'i'}})
+            if not data:
+                data = mongo.db.users.find_one({'username': u_clean})
             return User(data) if data else None
         for u in _MEMORY_DB['users'].values():
-            if u.get('username') == username:
+            if u.get('username', '').lower() == u_clean.lower():
                 return User(u)
         return None
 
     @staticmethod
     def get_by_email(email):
+        e_clean = email.strip().lower()
         if mongo.is_connected and mongo.db is not None:
-            data = mongo.db.users.find_one({'email': email})
+            data = mongo.db.users.find_one({'email': {'$regex': f'^{e_clean}$', '$options': 'i'}})
+            if not data:
+                data = mongo.db.users.find_one({'email': e_clean})
             return User(data) if data else None
         for u in _MEMORY_DB['users'].values():
-            if u.get('email') == email:
+            if u.get('email', '').lower() == e_clean:
                 return User(u)
         return None
 
@@ -214,6 +236,15 @@ class ResourceService:
         if mongo.is_connected and mongo.db is not None:
             return list(mongo.db.resources.find({'group_id': gid}).sort('created_at', -1))
         return [r for r in _MEMORY_DB['resources'].values() if r.get('group_id') == gid]
+
+    @staticmethod
+    def delete_resource(resource_id):
+        rid = str(resource_id)
+        if mongo.is_connected and mongo.db is not None:
+            res = mongo.db.resources.delete_one({'_id': rid})
+            return res.deleted_count > 0
+        else:
+            return _MEMORY_DB['resources'].pop(rid, None) is not None
 
 
 class ChatService:
@@ -449,6 +480,15 @@ class PollService:
                 if uid not in p.get('voters', []):
                     p['options'][option_idx]['votes'] += 1
                     p['voters'].append(uid)
+
+    @staticmethod
+    def delete_poll(poll_id):
+        pid = str(poll_id)
+        if mongo.is_connected and mongo.db is not None:
+            res = mongo.db.polls.delete_one({'_id': pid})
+            return res.deleted_count > 0
+        else:
+            return _MEMORY_DB['polls'].pop(pid, None) is not None
 
 
 class CalendarService:

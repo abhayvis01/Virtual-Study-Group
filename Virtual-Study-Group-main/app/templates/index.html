@@ -1,84 +1,101 @@
 {% extends 'base.html' %}
 
-{% block title %}Home - Virtual Study Group{% endblock %}
+{% block title %}Virtual Study Group - Real-Time Collaborative Platform{% endblock %}
 
 {% block content %}
-<section style="text-align: center; padding: 3rem 1rem 4rem 1rem;">
-  <span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid rgba(59, 130, 246, 0.3); padding: 0.4rem 1rem; border-radius: 20px; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px;">
-    <i class="fa-solid fa-graduation-cap"></i> COLLABORATIVE STUDY PLATFORM
-  </span>
+<!-- Hero Section -->
+<section style="text-align: center; padding: 4.5rem 1rem 4rem 1rem; position: relative;">
+  <div style="display: inline-flex; align-items: center; gap: 0.6rem; background: rgba(99, 102, 241, 0.12); color: var(--accent-secondary); border: 1px solid rgba(99, 102, 241, 0.28); padding: 0.45rem 1.15rem; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.85rem; letter-spacing: 0.4px; margin-bottom: 1.5rem;">
+    <i class="fa-solid fa-sparkles"></i> REAL-TIME COLLABORATIVE LEARNING PLATFORM
+  </div>
 
-  <h1 style="font-size: 3.2rem; font-weight: 800; margin: 1.5rem 0 1rem 0; line-height: 1.2;">
-    Collaborative Real-Time <br>
+  <h1 style="font-size: clamp(2.4rem, 5vw, 3.8rem); font-weight: 800; margin-bottom: 1.25rem; line-height: 1.15; letter-spacing: -1px;">
+    Accelerate Your Learning with <br>
     <span style="background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-      Virtual Study Rooms
+      Collaborative Study Rooms
     </span>
   </h1>
 
-  <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto 2rem auto; line-height: 1.6;">
-    Connect with peers, chat in real-time, share resources, brainstorm on interactive whiteboards, track group tasks, and host WebRTC video meetings!
+  <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 680px; margin: 0 auto 2.5rem auto; line-height: 1.65;">
+    Engage in HD video calls, lightweight audio lounges, interactive live whiteboards, multi-language code sandboxes, and AI-powered study assistance in one seamless workspace.
   </p>
 
-  <div style="display: flex; gap: 1rem; justify-content: center; align-items: center;">
-    <a href="{{ url_for('auth.register') }}" class="btn btn-primary" style="padding: 0.85rem 2rem; font-size: 1.05rem;">
+  <div style="display: flex; gap: 1rem; justify-content: center; align-items: center; flex-wrap: wrap;">
+    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">
       <i class="fa-solid fa-rocket"></i> Get Started Free
     </a>
-    <a href="{{ url_for('auth.login') }}" class="btn btn-secondary" style="padding: 0.85rem 2rem; font-size: 1.05rem;">
-      <i class="fa-solid fa-sign-in-alt"></i> Login to Workspace
+    <a href="{{ url_for('auth.login') }}" class="btn btn-secondary btn-lg">
+      <i class="fa-solid fa-arrow-right-to-bracket"></i> Open Workspace
     </a>
   </div>
 </section>
 
 <!-- Feature Showcase Grid -->
-<section style="margin-bottom: 4rem;">
-  <h2 style="text-align: center; margin-bottom: 2rem; font-weight: 700;">Platform Capabilities</h2>
+<section style="margin-bottom: 5rem;">
+  <div style="text-align: center; margin-bottom: 3rem;">
+    <h2 style="font-size: 2rem; font-weight: 800; letter-spacing: -0.5px;">Engineered for Seamless Collaboration</h2>
+    <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 1rem;">Everything students and educators need to organize, brainstorm, and study together.</p>
+  </div>
+
   <div class="grid-3">
     
-    <div class="card">
-      <div style="font-size: 2rem; color: #3b82f6; margin-bottom: 1rem;"><i class="fa-solid fa-video"></i></div>
-      <h3>WebRTC Video Calls</h3>
-      <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.95rem;">
-        Host HD group video meetings and screen sharing directly inside study room tabs without third-party downloads.
+    <div class="card card-hoverable">
+      <div class="metric-icon-box" style="background: rgba(99, 102, 241, 0.15); color: #6366f1; margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-video"></i>
+      </div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">WebRTC Video Calls</h3>
+      <p style="color: var(--text-secondary); font-size: 0.925rem; line-height: 1.55;">
+        Host HD group video meetings and high-framerate screen sharing directly inside study room tabs with zero plugins.
       </p>
     </div>
 
-    <div class="card">
-      <div style="font-size: 2rem; color: #8b5cf6; margin-bottom: 1rem;"><i class="fa-solid fa-paintbrush"></i></div>
-      <h3>Interactive Whiteboard</h3>
-      <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.95rem;">
-        Draw formulas, diagram architectures, and sketch ideas live with room members in real time.
+    <div class="card card-hoverable">
+      <div class="metric-icon-box" style="background: rgba(168, 85, 247, 0.15); color: #a855f7; margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-palette"></i>
+      </div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Interactive Whiteboard</h3>
+      <p style="color: var(--text-secondary); font-size: 0.925rem; line-height: 1.55;">
+        Sketch diagrams, solve equations, and visualize architectures together on an interactive live HTML5 canvas.
       </p>
     </div>
 
-    <div class="card">
-      <div style="font-size: 2rem; color: #10b981; margin-bottom: 1rem;"><i class="fa-solid fa-robot"></i></div>
-      <h3>AI Study Assistant</h3>
-      <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.95rem;">
-        Generate notes summaries, practice quiz questions, and get smart explanations for study concepts.
+    <div class="card card-hoverable">
+      <div class="metric-icon-box" style="background: rgba(16, 185, 129, 0.15); color: #10b981; margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-robot"></i>
+      </div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">AI Study Assistant</h3>
+      <p style="color: var(--text-secondary); font-size: 0.925rem; line-height: 1.55;">
+        Generate chapter summaries, instant practice questions, and clarify complex concepts with AI-powered guidance.
       </p>
     </div>
 
-    <div class="card">
-      <div style="font-size: 2rem; color: #f59e0b; margin-bottom: 1rem;"><i class="fa-solid fa-list-check"></i></div>
-      <h3>Group Task Planner</h3>
-      <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.95rem;">
-        Organize group assignments into To-Do, In Progress, and Completed columns.
+    <div class="card card-hoverable">
+      <div class="metric-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-list-check"></i>
+      </div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Study Task Kanban</h3>
+      <p style="color: var(--text-secondary); font-size: 0.925rem; line-height: 1.55;">
+        Track assignment deadlines and team tasks seamlessly across To-Do, In Progress, and Completed pipelines.
       </p>
     </div>
 
-    <div class="card">
-      <div style="font-size: 2rem; color: #ec4899; margin-bottom: 1rem;"><i class="fa-solid fa-cloud-arrow-up"></i></div>
-      <h3>Cloud Resource Vault</h3>
-      <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.95rem;">
-        Securely upload and share past papers, lecture slides, PDFs, and notes with one-click access.
+    <div class="card card-hoverable">
+      <div class="metric-icon-box" style="background: rgba(236, 72, 153, 0.15); color: #ec4899; margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+      </div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Cloud Resource Vault</h3>
+      <p style="color: var(--text-secondary); font-size: 0.925rem; line-height: 1.55;">
+        Centralize exam prep materials, slides, lecture recordings, and reference links in a secure cloud bucket.
       </p>
     </div>
 
-    <div class="card">
-      <div style="font-size: 2rem; color: #06b6d4; margin-bottom: 1rem;"><i class="fa-solid fa-database"></i></div>
-      <h3>Real-Time Data Engine</h3>
-      <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.95rem;">
-        High performance database powering user accounts, chat logs, live notes, and study room states.
+    <div class="card card-hoverable">
+      <div class="metric-icon-box" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4; margin-bottom: 1.25rem;">
+        <i class="fa-solid fa-stopwatch-20"></i>
+      </div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Pomodoro & Ambience</h3>
+      <p style="color: var(--text-secondary); font-size: 0.925rem; line-height: 1.55;">
+        Boost concentration with built-in timed study sprints and curated lo-fi audio soundscapes that log directly to your profile.
       </p>
     </div>
 

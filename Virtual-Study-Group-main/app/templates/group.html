@@ -6,48 +6,244 @@
 <!-- Room Header -->
 <div class="room-header">
   <div>
-    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.25rem;">
-      <h1 style="font-size: 1.8rem; font-weight: 800;">{{ group.name }}</h1>
-      <span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 0.2rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">
-        {{ group.category or 'General' }}
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
+      <h1 style="font-size: 1.9rem; font-weight: 800; letter-spacing: -0.5px;">{{ group.name }}</h1>
+      <span class="badge badge-primary">
+        <i class="fa-solid fa-layer-group"></i> {{ group.category or 'General' }}
       </span>
     </div>
-    <p style="color: var(--text-secondary); font-size: 0.95rem;">{{ group.description }}</p>
+    <p style="color: var(--text-secondary); font-size: 0.95rem; max-width: 700px; line-height: 1.5;">{{ group.description }}</p>
   </div>
 
   <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-    <div style="background: var(--bg-input); padding: 0.5rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">
-      <i class="fa-solid fa-key" style="color: #f59e0b;"></i> Room Code: <span id="codeSpan">{{ group.room_code }}</span>
-      <button onclick="navigator.clipboard.writeText('{{ group.room_code }}'); alert('Room Code Copied!');" style="background: none; border: none; color: var(--accent-primary); cursor: pointer; margin-left: 0.5rem;"><i class="fa-solid fa-copy"></i></button>
+    <div style="background: var(--bg-input); padding: 0.5rem 0.9rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.85rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
+      <i class="fa-solid fa-key" style="color: #f59e0b;"></i> Room Code: <span id="codeSpan" style="font-family: var(--font-mono); letter-spacing: 1px; color: var(--accent-secondary);">{{ group.room_code }}</span>
+      <button onclick="navigator.clipboard.writeText('{{ group.room_code }}'); alert('Room Code Copied to Clipboard!');" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 2px 4px; border-radius: 4px;" title="Copy Code"><i class="fa-regular fa-copy"></i></button>
     </div>
     <a href="{{ url_for('resources.add_resource', group_id=group['_id']) }}" class="btn btn-primary btn-sm">
-      <i class="fa-solid fa-cloud-arrow-up"></i> Add Resource
+      <i class="fa-solid fa-cloud-arrow-up"></i> Upload Resource
     </a>
     {% if group.created_by|string == current_user.id|string %}
       <form action="{{ url_for('groups.delete_group', group_id=group['_id']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this study room? This action cannot be undone.');" style="display: inline;">
-        <button type="submit" class="btn btn-sm" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
-          <i class="fa-solid fa-trash"></i> Delete Room
+        <button type="submit" class="btn btn-secondary btn-sm" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">
+          <i class="fa-solid fa-trash-can"></i> Delete Room
         </button>
       </form>
     {% endif %}
   </div>
 </div>
 
-<!-- Tabs Navigation -->
-<div class="tabs-nav">
-  <button class="tab-btn active" onclick="switchTab('chatTab', this)"><i class="fa-solid fa-comments"></i> Group Chat</button>
-  <button class="tab-btn" onclick="switchTab('videoTab', this)"><i class="fa-solid fa-video"></i> Video Meeting</button>
-  <button class="tab-btn" onclick="switchTab('voiceTab', this)"><i class="fa-solid fa-microphone"></i> Audio Lounge</button>
-  <button class="tab-btn" onclick="switchTab('whiteboardTab', this)"><i class="fa-solid fa-paintbrush"></i> Whiteboard</button>
-  <button class="tab-btn" onclick="switchTab('codeTab', this)"><i class="fa-solid fa-code"></i> Code Playground</button>
-  <button class="tab-btn" onclick="switchTab('calendarTab', this)"><i class="fa-solid fa-calendar-alt"></i> Calendar & Deadlines</button>
-  <button class="tab-btn" onclick="switchTab('pollsTab', this)"><i class="fa-solid fa-square-poll-vertical"></i> Room Polls</button>
-  <button class="tab-btn" onclick="switchTab('tasksTab', this)"><i class="fa-solid fa-list-check"></i> Study Task Planner</button>
-  <button class="tab-btn" onclick="switchTab('pomodoroTab', this)"><i class="fa-solid fa-stopwatch"></i> Pomodoro & Ambience</button>
-  <button class="tab-btn" onclick="switchTab('resourcesTab', this)"><i class="fa-solid fa-folder-open"></i> Resources ({{ resources|length }})</button>
-  <button class="tab-btn" onclick="switchTab('flashcardsTab', this)"><i class="fa-solid fa-clone"></i> Flashcards</button>
-  <button class="tab-btn" onclick="switchTab('leaderboardTab', this)"><i class="fa-solid fa-trophy"></i> Leaderboard</button>
-  <button class="tab-btn" onclick="switchTab('aiTab', this)"><i class="fa-solid fa-robot"></i> AI Helper</button>
+<!-- Professional Segmented Navigation & Workspace Suite Launcher -->
+<div class="workspace-nav-bar">
+  <!-- Core Segmented Pill Tabs -->
+  <div class="workspace-segmented-control" role="tablist">
+    <button class="segmented-tab active" onclick="switchTab('chatTab', this)">
+      <i class="fa-solid fa-comments"></i> <span>Chat</span>
+    </button>
+    <button class="segmented-tab" onclick="switchTab('codeTab', this)">
+      <i class="fa-solid fa-code"></i> <span>Code Sandbox</span>
+    </button>
+    <button class="segmented-tab" onclick="switchTab('aiTab', this)">
+      <i class="fa-solid fa-wand-magic-sparkles"></i> <span>AI Assistant</span>
+      <span class="tab-pill-badge">PRO</span>
+    </button>
+    <button class="segmented-tab" onclick="switchTab('videoTab', this)">
+      <i class="fa-solid fa-video"></i> <span>Video Room</span>
+    </button>
+    <button class="segmented-tab" onclick="switchTab('whiteboardTab', this)">
+      <i class="fa-solid fa-pen-ruler"></i> <span>Whiteboard</span>
+    </button>
+    <button class="segmented-tab" onclick="switchTab('tasksTab', this)">
+      <i class="fa-solid fa-list-check"></i> <span>Tasks</span>
+    </button>
+  </div>
+  
+  <!-- Right Action: Clean Suite Modal Trigger -->
+  <div class="workspace-suite-action">
+    <button type="button" class="btn-suite-launcher" onclick="openToolsDialog()" title="Open All Features Dialog">
+      <div class="suite-icon-cluster">
+        <i class="fa-solid fa-layer-group"></i>
+      </div>
+      <div class="suite-label-group">
+        <span class="suite-title">Workspace Suite</span>
+        <span class="suite-subtitle">13 Collaboration Tools</span>
+      </div>
+      <i class="fa-solid fa-chevron-down suite-arrow"></i>
+    </button>
+  </div>
+</div>
+
+<!-- Professional Workspace Modules Dialog Modal -->
+<div id="toolsDialogModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeToolsDialog()">
+  <div class="modal-content tools-modal-card">
+    <div class="tools-modal-header">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div class="tools-modal-icon">
+          <i class="fa-solid fa-cubes-stacked"></i>
+        </div>
+        <div>
+          <h3 style="font-weight: 800; font-size: 1.25rem; margin-bottom: 0.2rem;">Workspace Tools & Features</h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">Switch directly to any collaborative room module</p>
+        </div>
+      </div>
+      <button type="button" onclick="closeToolsDialog()" class="modal-close-btn" aria-label="Close Dialog">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Quick Search Filter in Dialog -->
+    <div style="margin-bottom: 1.25rem;">
+      <div style="position: relative;">
+        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
+        <input type="text" id="toolFilterInput" onkeyup="filterToolsGrid()" class="form-control" placeholder="Search modules (e.g., Code, Quiz, Whiteboard, Flashcards)..." style="padding-left: 2.5rem;">
+      </div>
+    </div>
+
+    <div class="tools-grid-dialog" id="toolsGridDialog">
+      <div class="tool-item" onclick="selectTabFromDialog('chatTab')" data-name="group chat messaging live discuss">
+        <div class="tool-icon" style="background: rgba(99, 102, 241, 0.15); color: #818cf8;">
+          <i class="fa-solid fa-comments"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Group Chat</div>
+          <div class="tool-desc">Real-time room chat with active members</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('codeTab')" data-name="code playground python javascript ide sandbox run execution">
+        <div class="tool-icon" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8;">
+          <i class="fa-solid fa-code"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Code Playground</div>
+          <div class="tool-desc">Live execution for Python 3 & JavaScript</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('aiTab')" data-name="ai helper assistant gemini tutor solution explain review">
+        <div class="tool-icon" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">AI Academic Assistant</div>
+          <div class="tool-desc">Smart study mentor, code generator & quizzer</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('whiteboardTab')" data-name="whiteboard canvas draw diagrams sketching collaborate">
+        <div class="tool-icon" style="background: rgba(236, 72, 153, 0.15); color: #f472b6;">
+          <i class="fa-solid fa-pen-ruler"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Whiteboard</div>
+          <div class="tool-desc">Freehand canvas for notes & architecture</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('videoTab')" data-name="video meeting call webrtc conference share screen camera">
+        <div class="tool-icon" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">
+          <i class="fa-solid fa-video"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Video Meeting</div>
+          <div class="tool-desc">HD WebRTC video conferencing & screen share</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('voiceTab')" data-name="audio lounge voice chat talk mic microphone call">
+        <div class="tool-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+          <i class="fa-solid fa-microphone-lines"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Audio Lounge</div>
+          <div class="tool-desc">Lightweight voice room without video overhead</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('tasksTab')" data-name="tasks task board kanban planner todo progress">
+        <div class="tool-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+          <i class="fa-solid fa-list-check"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Task Planner</div>
+          <div class="tool-desc">Kanban board for team milestones & tasks</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('calendarTab')" data-name="deadlines calendar exams events schedule dates">
+        <div class="tool-icon" style="background: rgba(249, 115, 22, 0.15); color: #fb923c;">
+          <i class="fa-solid fa-calendar-days"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Deadlines & Calendar</div>
+          <div class="tool-desc">Track exams, study sessions, and milestones</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('pollsTab')" data-name="room polls votes voting poll survey consensus">
+        <div class="tool-icon" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc;">
+          <i class="fa-solid fa-square-poll-vertical"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Room Polls</div>
+          <div class="tool-desc">Quick democratic votes & group decisions</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('pomodoroTab')" data-name="pomodoro timer focus ambience lofi rain study clock">
+        <div class="tool-icon" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">
+          <i class="fa-solid fa-stopwatch-20"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Pomodoro & Ambience</div>
+          <div class="tool-desc">25-minute focus intervals + relaxing audio</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('flashcardsTab')" data-name="flashcards cards recall deck revision memory quiz">
+        <div class="tool-icon" style="background: rgba(20, 184, 166, 0.15); color: #2dd4bf;">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Study Flashcards</div>
+          <div class="tool-desc">Interactive flip cards for key terms & revision</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('resourcesTab')" data-name="resources files pdf notes documents uploads">
+        <div class="tool-icon" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;">
+          <i class="fa-solid fa-folder-open"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Study Resources</div>
+          <div class="tool-desc">Shared PDF docs, lecture slides & notes</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+
+      <div class="tool-item" onclick="selectTabFromDialog('leaderboardTab')" data-name="leaderboard rankings xp points streak trophies podium">
+        <div class="tool-icon" style="background: rgba(234, 179, 8, 0.15); color: #facc15;">
+          <i class="fa-solid fa-trophy"></i>
+        </div>
+        <div class="tool-info">
+          <div class="tool-title">Leaderboard</div>
+          <div class="tool-desc">XP points, streak leaderboards & member ranks</div>
+        </div>
+        <i class="fa-solid fa-chevron-right tool-arrow"></i>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- TAB 1: Real-time Group Chat -->
@@ -120,26 +316,43 @@
 
 <!-- TAB 5: Code Playground -->
 <div id="codeTab" class="tab-pane">
-  <div class="card" style="padding: 1rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-      <h3 style="font-weight: 700;"><i class="fa-solid fa-code" style="color: #8b5cf6;"></i> Live Code Playground</h3>
-      <div style="display: flex; gap: 0.5rem; align-items: center;">
-        <select id="codeLang" class="form-control" style="width: 120px; padding: 0.4rem;">
-          <option value="python">Python</option>
+  <div class="card" style="padding: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(99, 102, 241, 0.15); color: var(--accent-secondary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+          <i class="fa-solid fa-terminal"></i>
+        </div>
+        <div>
+          <h3 style="font-weight: 800; font-size: 1.2rem;">Live Code Playground</h3>
+          <p style="font-size: 0.825rem; color: var(--text-secondary);">Real-time runtime execution benchmarking in milliseconds</p>
+        </div>
+      </div>
+      <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <select id="codeLang" class="form-control" style="width: 130px; padding: 0.45rem 0.75rem;" onchange="updateCodeTemplate()">
+          <option value="python">Python 3</option>
           <option value="javascript">JavaScript</option>
         </select>
-        <button onclick="executeCode()" class="btn btn-primary btn-sm"><i class="fa-solid fa-play"></i> Run Code</button>
+        <button onclick="askAIToExplainCode()" class="btn btn-secondary btn-sm" title="Ask AI to review, explain, or fix this code">
+          <i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> AI Review
+        </button>
+        <button onclick="clearConsole()" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eraser"></i> Clear</button>
+        <button id="runCodeBtn" onclick="executeCode()" class="btn btn-primary btn-sm"><i class="fa-solid fa-play"></i> Run Code</button>
       </div>
     </div>
 
-    <textarea id="codeEditor" class="form-control" rows="10" style="font-family: monospace; background: #090d16; color: #a7f3d0; font-size: 0.95rem; line-height: 1.5;" placeholder="# Type your Python or JavaScript code here...
-print('Hello from Virtual Study Group Code Playground!')
-for i in range(1, 4):
-    print(f'Study Goal #{i}: Complete')"></textarea>
+    <!-- Theme-adaptive Professional Code Editor -->
+    <div class="code-editor-wrapper">
+      <textarea id="codeEditor" class="form-control code-editor-area" rows="12" placeholder="# Write your code here..."></textarea>
+    </div>
 
-    <div style="margin-top: 0.75rem;">
-      <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.25rem;">Console Output:</div>
-      <pre id="codeConsole" style="background: #000; color: #38bdf8; padding: 1rem; border-radius: var(--radius-sm); min-height: 80px; font-family: monospace; font-size: 0.9rem; overflow-x: auto;">Click "Run Code" to execute...</pre>
+    <div style="margin-top: 1rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+        <span style="font-size: 0.825rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+          <i class="fa-solid fa-square-terminal"></i> Console Output
+        </span>
+        <span id="execTimerBadge" class="badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981; display: none;">Ready</span>
+      </div>
+      <pre id="codeConsole" class="code-console-box">Click "Run Code" to execute...</pre>
     </div>
   </div>
 </div>
@@ -271,19 +484,67 @@ for i in range(1, 4):
   {% if resources %}
     <div class="grid-3">
       {% for r in resources %}
-        <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-            <h4 style="font-weight: 700; font-size: 1.05rem;">{{ r.name }}</h4>
-            <span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 0.15rem 0.5rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">
-              {{ r.type }}
-            </span>
+        {% set is_link = (r.type == 'link') or (r.content and (r.content.startswith('http://') or r.content.startswith('https://'))) %}
+        {% set resource_target = r.file_url if r.file_url else (r.content if is_link else '') %}
+        {% set is_yt = ('youtube.com' in r.content or 'youtu.be' in r.content) if r.content else false %}
+        <div class="card card-hoverable" 
+             {% if resource_target %}
+             onclick="window.open('{{ resource_target }}', '_blank')" 
+             style="cursor: pointer; display: flex; flex-direction: column; justify-content: space-between; transition: var(--transition-smooth);"
+             title="Click to open"
+             {% else %}
+             style="display: flex; flex-direction: column; justify-content: space-between;"
+             {% endif %}>
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.65rem; gap: 0.5rem;">
+              <h4 style="font-weight: 700; font-size: 1.05rem; display: flex; align-items: center; gap: 0.45rem;">
+                {% if is_yt %}
+                  <i class="fa-brands fa-youtube" style="color: #ef4444; font-size: 1.1rem;"></i>
+                {% elif is_link %}
+                  <i class="fa-solid fa-link" style="color: #3b82f6;"></i>
+                {% elif r.file_url %}
+                  <i class="fa-solid fa-file-lines" style="color: #10b981;"></i>
+                {% else %}
+                  <i class="fa-solid fa-note-sticky" style="color: #f59e0b;"></i>
+                {% endif %}
+                <span>{{ r.name }}</span>
+              </h4>
+              <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; padding: 0.15rem 0.55rem; border-radius: 8px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap;">
+                  {{ r.type }}
+                </span>
+                <button onclick="event.stopPropagation(); deleteResource('{{ r._id }}');" class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.45rem; color: #ef4444; border-color: rgba(239, 68, 68, 0.3); font-size: 0.75rem;" title="Delete Resource">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+
+            {% if is_link %}
+              <p style="margin-bottom: 1rem;">
+                <a href="{{ r.content }}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation();" style="color: var(--accent-secondary); word-break: break-all; font-family: var(--font-mono); font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: underline;">
+                  {{ r.content }} <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.72rem;"></i>
+                </a>
+              </p>
+            {% else %}
+              <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.5;">{{ r.content }}</p>
+            {% endif %}
           </div>
-          <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">{{ r.content }}</p>
-          {% if r.file_url %}
-            <a href="{{ r.file_url }}" target="_blank" class="btn btn-secondary btn-sm" style="width: 100%;">
-              <i class="fa-solid fa-download"></i> View / Download File
-            </a>
-          {% endif %}
+
+          <div style="margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px solid var(--border-color);">
+            {% if is_yt %}
+              <a href="{{ r.content }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #dc2626; border-color: #dc2626;" onclick="event.stopPropagation();">
+                <i class="fa-brands fa-youtube"></i> Watch on YouTube <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 0.7rem; margin-left: auto;"></i>
+              </a>
+            {% elif is_link %}
+              <a href="{{ r.content }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onclick="event.stopPropagation();">
+                <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Link
+              </a>
+            {% elif r.file_url %}
+              <a href="{{ r.file_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onclick="event.stopPropagation();">
+                <i class="fa-solid fa-download"></i> View / Download File
+              </a>
+            {% endif %}
+          </div>
         </div>
       {% endfor %}
     </div>
@@ -332,35 +593,80 @@ for i in range(1, 4):
 
 <!-- TAB 13: AI Study Assistant & PDF Chat -->
 <div id="aiTab" class="tab-pane">
-  <div class="card" style="max-width: 750px; margin: 0 auto;">
-    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
-      <div style="background: rgba(139, 92, 246, 0.15); color: #8b5cf6; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
-        <i class="fa-solid fa-robot"></i>
+  <div class="card" style="max-width: 800px; margin: 0 auto; padding: 1.75rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="background: rgba(99, 102, 241, 0.15); color: var(--accent-secondary); width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+        </div>
+        <div>
+          <h3 style="font-weight: 800; font-size: 1.25rem;">AI Academic Study Assistant</h3>
+          <p style="font-size: 0.825rem; color: var(--text-secondary);">Ask questions, explain code snippets, generate practice quizzes, or summarize notes</p>
+        </div>
       </div>
-      <div>
-        <h3 style="font-weight: 700;">AI Study Assistant & Document Chat</h3>
-        <p style="font-size: 0.85rem; color: var(--text-secondary);">Ask study questions, summarize topics, or query uploaded group files.</p>
-      </div>
+      <button onclick="clearAIResponse()" class="btn btn-secondary btn-sm"><i class="fa-solid fa-rotate-left"></i> Reset</button>
     </div>
 
-    <div id="aiResponseBox" style="background: var(--bg-secondary); border-radius: var(--radius-md); padding: 1.25rem; min-height: 150px; margin-bottom: 1rem; border: 1px solid var(--border-color); font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap;">
-      Ask a question below to receive an instant explanation or study breakdown!
+    <!-- Quick Prompt Suggestion Chips -->
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+      <button type="button" onclick="setAIPrompt('Explain MongoDB compound indexing with an example')" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+        💡 Explain Indexing
+      </button>
+      <button type="button" onclick="setAIPrompt('Generate a quiz question on Data Structures and Algorithms')" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+        ❓ DSA Quiz Question
+      </button>
+      <button type="button" onclick="setAIPrompt('Summarize key principles of Distributed Consensus & Raft')" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+        📚 Summarize Raft
+      </button>
+      <button type="button" onclick="setAIPrompt('Review Python function to remove duplicates from an array')" class="btn btn-secondary btn-sm" style="font-size: 0.75rem;">
+        💻 Code Review
+      </button>
     </div>
 
-    <div style="display: flex; gap: 0.5rem;">
-      <input type="text" id="aiPrompt" class="form-control" placeholder="Ask AI e.g. Explain MongoDB indexing or Summarize study notes..." onkeypress="if(event.key === 'Enter') askAI()">
-      <button onclick="askAI()" class="btn btn-primary"><i class="fa-solid fa-wand-magic-sparkles"></i> Ask AI</button>
+    <!-- Response Display -->
+    <div id="aiResponseBox" style="background: var(--bg-secondary); border-radius: var(--radius-lg); padding: 1.5rem; min-height: 180px; margin-bottom: 0.75rem; border: 1px solid var(--border-color); font-size: 0.95rem; line-height: 1.65; white-space: pre-wrap; color: var(--text-primary); box-shadow: var(--shadow-sm);">
+Ask a study question or click any prompt above to receive a step-by-step academic explanation!
+    </div>
+
+    <!-- AI Action Bar (Copy Code, Run in Playground, Share) -->
+    <div id="aiActionBar" style="display: none; gap: 0.6rem; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap;">
+      <button id="sendToPlaygroundBtn" onclick="transferCodeToPlayground()" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-play"></i> Run in Code Playground
+      </button>
+      <button onclick="copyAICode()" class="btn btn-secondary btn-sm" id="copyCodeBtn">
+        <i class="fa-regular fa-copy"></i> Copy Code
+      </button>
+      <button onclick="copyFullAIResponse()" class="btn btn-secondary btn-sm">
+        <i class="fa-solid fa-clipboard"></i> Copy Explanation
+      </button>
+      <span id="aiActionToast" style="font-size: 0.8rem; color: #10b981; font-weight: 700; display: none;"></span>
+    </div>
+
+    <!-- Input Form -->
+    <div style="display: flex; gap: 0.6rem;">
+      <input type="text" id="aiPrompt" class="form-control" placeholder="Ask AI: e.g. 'Explain binary search', 'Quiz on SQL', 'Review Python code'..." onkeypress="if(event.key === 'Enter') askAI()">
+      <button id="askAIBtn" onclick="askAI()" class="btn btn-primary" style="padding: 0 1.5rem;">
+        <i class="fa-solid fa-paper-plane"></i> Ask
+      </button>
     </div>
   </div>
 </div>
 
 <!-- Modal: Add Event -->
-<div id="eventModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
-  <div class="card" style="width: 100%; max-width: 420px; position: relative;">
-    <button onclick="document.getElementById('eventModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer;">
-      <i class="fa-solid fa-times"></i>
+<div id="eventModal" class="modal-overlay">
+  <div class="modal-content">
+    <button onclick="document.getElementById('eventModal').style.display='none'" class="modal-close-btn" aria-label="Close">
+      <i class="fa-solid fa-xmark"></i>
     </button>
-    <h3 style="margin-bottom: 1rem; font-weight: 700;">Add Event / Exam Deadline</h3>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+      <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(99, 102, 241, 0.15); color: var(--accent-secondary); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+        <i class="fa-solid fa-calendar-plus"></i>
+      </div>
+      <div>
+        <h3 style="font-weight: 800; font-size: 1.25rem;">Add Event / Deadline</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem;">Keep room members aligned on key dates</p>
+      </div>
+    </div>
     <div class="form-group">
       <label class="form-label">Event Title</label>
       <input type="text" id="eventTitle" class="form-control" placeholder="e.g. Midterm Exam / Project Presentation">
@@ -374,12 +680,20 @@ for i in range(1, 4):
 </div>
 
 <!-- Modal: Add Poll -->
-<div id="pollModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
-  <div class="card" style="width: 100%; max-width: 420px; position: relative;">
-    <button onclick="document.getElementById('pollModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer;">
-      <i class="fa-solid fa-times"></i>
+<div id="pollModal" class="modal-overlay">
+  <div class="modal-content">
+    <button onclick="document.getElementById('pollModal').style.display='none'" class="modal-close-btn" aria-label="Close">
+      <i class="fa-solid fa-xmark"></i>
     </button>
-    <h3 style="margin-bottom: 1rem; font-weight: 700;">Create Room Poll</h3>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+      <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+        <i class="fa-solid fa-square-poll-vertical"></i>
+      </div>
+      <div>
+        <h3 style="font-weight: 800; font-size: 1.25rem;">Create Room Poll</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem;">Gather consensus with a quick vote</p>
+      </div>
+    </div>
     <div class="form-group">
       <label class="form-label">Poll Question</label>
       <input type="text" id="pollQuestion" class="form-control" placeholder="e.g. When should we hold mock review?">
@@ -397,19 +711,27 @@ for i in range(1, 4):
 </div>
 
 <!-- Modal: Add Flashcard -->
-<div id="cardModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 1000; align-items: center; justify-content: center;">
-  <div class="card" style="width: 100%; max-width: 420px; position: relative;">
-    <button onclick="document.getElementById('cardModal').style.display='none'" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); font-size: 1.2rem; cursor: pointer;">
-      <i class="fa-solid fa-times"></i>
+<div id="cardModal" class="modal-overlay">
+  <div class="modal-content">
+    <button onclick="document.getElementById('cardModal').style.display='none'" class="modal-close-btn" aria-label="Close">
+      <i class="fa-solid fa-xmark"></i>
     </button>
-    <h3 style="margin-bottom: 1rem; font-weight: 700;">Add Flashcard</h3>
+    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+      <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+        <i class="fa-solid fa-layer-group"></i>
+      </div>
+      <div>
+        <h3 style="font-weight: 800; font-size: 1.25rem;">Add Flashcard</h3>
+        <p style="color: var(--text-secondary); font-size: 0.85rem;">Create quick recall revision decks</p>
+      </div>
+    </div>
     <div class="form-group">
       <label class="form-label">Question / Term</label>
       <input type="text" id="cardQuestion" class="form-control" placeholder="e.g. What is PyMongo?">
     </div>
     <div class="form-group">
       <label class="form-label">Answer / Definition</label>
-      <textarea id="cardAnswer" class="form-control" rows="3" placeholder="Explanation..."></textarea>
+      <textarea id="cardAnswer" class="form-control" rows="3" placeholder="Explanation or answer..."></textarea>
     </div>
     <button onclick="addFlashcard()" class="btn btn-primary" style="width: 100%;">Create Card</button>
   </div>
@@ -425,13 +747,69 @@ for i in range(1, 4):
   let audioSynth = null;
   let lastMessageCount = 0;
 
+  function openToolsDialog() {
+    const modal = document.getElementById('toolsDialogModal');
+    if (modal) {
+      modal.style.display = 'flex';
+      const input = document.getElementById('toolFilterInput');
+      if (input) {
+        input.value = '';
+        filterToolsGrid();
+        setTimeout(() => input.focus(), 100);
+      }
+    }
+  }
+
+  function closeToolsDialog() {
+    const modal = document.getElementById('toolsDialogModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function selectTabFromDialog(tabId) {
+    closeToolsDialog();
+    const btn = document.querySelector(`.segmented-tab[onclick*="${tabId}"]`);
+    switchTab(tabId, btn);
+  }
+
+  function filterToolsGrid() {
+    const q = (document.getElementById('toolFilterInput').value || '').toLowerCase().trim();
+    const items = document.querySelectorAll('#toolsGridDialog .tool-item');
+    let visibleCount = 0;
+    items.forEach(el => {
+      const matchText = (el.getAttribute('data-name') || '') + ' ' + el.innerText.toLowerCase();
+      if (!q || matchText.includes(q)) {
+        el.style.display = 'flex';
+        visibleCount++;
+      } else {
+        el.style.display = 'none';
+      }
+    });
+  }
+
+  // Close dialog on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeToolsDialog();
+  });
+
   function switchTab(tabId, btnElem) {
     document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById(tabId).classList.add('active');
-    if (btnElem) btnElem.classList.add('active');
+    document.querySelectorAll('.segmented-tab').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tool-item').forEach(el => el.classList.remove('active-tool'));
 
-    // Save active tab to sessionStorage so tab state is preserved without refresh
+    const targetPane = document.getElementById(tabId);
+    if (targetPane) targetPane.classList.add('active');
+
+    // Update active state on segmented tab if present
+    const segBtn = btnElem || document.querySelector(`.segmented-tab[onclick*="${tabId}"]`);
+    if (segBtn) {
+      segBtn.classList.add('active');
+    }
+
+    // Highlight item in dialog
+    const dialogItem = document.querySelector(`.tool-item[onclick*="${tabId}"]`);
+    if (dialogItem) dialogItem.classList.add('active-tool');
+
+    // Save active tab to sessionStorage
     sessionStorage.setItem('vsg_active_tab_' + groupId, tabId);
 
     if (tabId === 'whiteboardTab') initWhiteboard();
@@ -444,8 +822,7 @@ for i in range(1, 4):
   document.addEventListener('DOMContentLoaded', () => {
     const savedTab = sessionStorage.getItem('vsg_active_tab_' + groupId);
     if (savedTab && document.getElementById(savedTab)) {
-      const btn = document.querySelector(`.tab-btn[onclick*="${savedTab}"]`);
-      switchTab(savedTab, btn);
+      switchTab(savedTab);
     }
   });
 
@@ -568,8 +945,13 @@ for i in range(1, 4):
         if (res.status === 'success') {
           const grid = document.getElementById('pollsGrid');
           grid.innerHTML = res.polls.length === 0 ? '<p style="color:var(--text-secondary)">No polls active.</p>' : res.polls.map(p => `
-            <div class="card">
-              <h4 style="font-weight:800; margin-bottom:0.75rem;">🗳️ ${p.question}</h4>
+            <div class="card" id="poll-${p._id}">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.85rem; gap:0.5rem;">
+                <h4 style="font-weight:800; font-size:1.05rem; margin:0; line-height:1.4;">🗳️ ${p.question}</h4>
+                <button onclick="deletePoll('${p._id}')" class="btn btn-secondary btn-sm" style="color:#ef4444; border-color:rgba(239, 68, 68, 0.3); padding:0.25rem 0.55rem; font-size:0.8rem;" title="Delete Poll">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
               <div style="display:flex; flex-direction:column; gap:0.5rem;">
                 ${p.options.map((opt, idx) => `
                   <button onclick="votePoll('${p._id}', ${idx})" class="btn btn-secondary btn-sm" style="justify-content:space-between;">
@@ -581,6 +963,46 @@ for i in range(1, 4):
           `).join('');
         }
       });
+  }
+
+  function deletePoll(pollId) {
+    if (!confirm('Are you sure you want to delete this poll?')) return;
+    fetch('/api/polls/delete/' + pollId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 'success') {
+        loadPolls();
+      } else {
+        alert(res.message || 'Error deleting poll');
+      }
+    })
+    .catch(err => {
+      console.error('Error deleting poll:', err);
+      alert('Failed to delete poll.');
+    });
+  }
+
+  function deleteResource(resId) {
+    if (!confirm('Are you sure you want to delete this resource?')) return;
+    fetch('/api/resources/delete/' + resId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 'success') {
+        window.location.reload();
+      } else {
+        alert(res.message || 'Error deleting resource');
+      }
+    })
+    .catch(err => {
+      console.error('Error deleting resource:', err);
+      alert('Failed to delete resource.');
+    });
   }
 
   function votePoll(pollId, optIdx) {
@@ -858,26 +1280,334 @@ for i in range(1, 4):
       });
   }
 
+  // Code Playground JS
+  const sampleCode = {
+    python: `# Python 3 Algorithm & Math Benchmark
+def fibonacci(n):
+    sequence = [0, 1]
+    while len(sequence) < n:
+        sequence.append(sequence[-1] + sequence[-2])
+    return sequence
+
+print("🚀 Fibonacci Sequence (First 10 numbers):")
+print(fibonacci(10))
+
+# Sample calculation
+values = [12, 45, 68, 23, 89]
+print("\\n📊 Mean calculation:")
+print(f"Values: {values}")
+print(f"Average: {sum(values) / len(values):.2f}")`,
+    javascript: `// JavaScript ES6 Sandbox
+function computePrimes(limit) {
+  const primes = [];
+  for (let i = 2; primes.length < limit; i++) {
+    if (primes.every(p => i % p !== 0)) primes.push(i);
+  }
+  return primes;
+}
+
+console.log("⚡ First 8 Prime Numbers:");
+console.log(computePrimes(8));`
+  };
+
+  function updateCodeTemplate() {
+    const lang = document.getElementById('codeLang').value;
+    const editor = document.getElementById('codeEditor');
+    editor.value = sampleCode[lang] || '';
+  }
+
+  function clearConsole() {
+    document.getElementById('codeConsole').innerText = 'Console cleared. Ready for next run.';
+    const badge = document.getElementById('execTimerBadge');
+    if (badge) badge.style.display = 'none';
+  }
+
+  function executeCode() {
+    const editor = document.getElementById('codeEditor');
+    const code = editor.value.trim();
+    const lang = document.getElementById('codeLang').value;
+    const consoleBox = document.getElementById('codeConsole');
+    const btn = document.getElementById('runCodeBtn');
+    const badge = document.getElementById('execTimerBadge');
+
+    if (!code) {
+      consoleBox.innerText = '⚠️ Please enter code to execute.';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Running...';
+    consoleBox.innerText = '⚡ Executing ' + lang.toUpperCase() + ' runtime...';
+
+    // If JavaScript and Node not installed on backend, allow client execution fallback
+    if (lang === 'javascript') {
+      try {
+        let logs = [];
+        const originalLog = console.log;
+        console.log = function(...args) {
+          logs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' '));
+          originalLog.apply(console, args);
+        };
+        const start = performance.now();
+        const result = eval(code);
+        const elapsed = (performance.now() - start).toFixed(2);
+        console.log = originalLog;
+
+        let output = logs.join('\n');
+        if (!output && result !== undefined) output = String(result);
+        if (!output) output = '[Code evaluated successfully with no console output]';
+        output += `\n\n⚡ Client Runtime: ${elapsed} ms`;
+
+        consoleBox.innerText = output;
+        if (badge) {
+          badge.innerText = `${elapsed} ms`;
+          badge.style.display = 'inline-block';
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-play"></i> Run Code';
+        return;
+      } catch (err) {
+        // Fall back to server execution
+      }
+    }
+
+    fetch('/api/code/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: code, language: lang })
+    })
+    .then(r => r.json())
+    .then(res => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-play"></i> Run Code';
+      if (res.status === 'success') {
+        consoleBox.innerText = res.output;
+      } else {
+        consoleBox.innerText = 'Execution Failed:\n' + (res.output || res.message);
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-play"></i> Run Code';
+      consoleBox.innerText = 'Error connecting to code runner service: ' + err;
+    });
+  }
+
+  function askAIToExplainCode() {
+    const code = document.getElementById('codeEditor').value.trim();
+    const lang = document.getElementById('codeLang').value;
+    if (!code) {
+      alert('Please enter or paste code in the editor first!');
+      return;
+    }
+    // Switch to AI tab
+    const aiTabBtn = document.querySelector('button[onclick*="aiTab"]');
+    if (aiTabBtn) switchTab('aiTab', aiTabBtn);
+    
+    // Set query and trigger askAI
+    const input = document.getElementById('aiPrompt');
+    if (input) {
+      input.value = `Review and explain this ${lang.toUpperCase()} code:\n${code}`;
+      askAI();
+    }
+  }
+
   // AI Assistant JS
+  function setAIPrompt(text) {
+    const input = document.getElementById('aiPrompt');
+    if (input) {
+      input.value = text;
+      askAI();
+    }
+  }
+
+  let currentGeneratedCode = "";
+  let currentGeneratedLang = "python";
+
+  function clearAIResponse() {
+    const box = document.getElementById('aiResponseBox');
+    if (box) box.innerText = 'Ask a study question or click any prompt above to receive a step-by-step academic explanation!';
+    const input = document.getElementById('aiPrompt');
+    if (input) input.value = '';
+    const bar = document.getElementById('aiActionBar');
+    if (bar) bar.style.display = 'none';
+  }
+
+  function extractCodeFromMarkdown(text) {
+    const match = text.match(/```(?:python|javascript|js)?\s*([\s\S]*?)```/i);
+    return match ? match[1].trim() : "";
+  }
+
+  function showActionToast(msg) {
+    const toast = document.getElementById('aiActionToast');
+    if (toast) {
+      toast.innerText = msg;
+      toast.style.display = 'inline';
+      setTimeout(() => { toast.style.display = 'none'; }, 2500);
+    }
+  }
+
+  function copyAICode() {
+    if (!currentGeneratedCode) {
+      alert("No code snippet found in the AI response.");
+      return;
+    }
+    navigator.clipboard.writeText(currentGeneratedCode);
+    showActionToast("✅ Code copied to clipboard!");
+  }
+
+  function copyFullAIResponse() {
+    const box = document.getElementById('aiResponseBox');
+    if (box) {
+      navigator.clipboard.writeText(box.innerText);
+      showActionToast("✅ Explanation copied!");
+    }
+  }
+
+  function transferCodeToPlayground() {
+    if (!currentGeneratedCode) {
+      alert("No code found to transfer.");
+      return;
+    }
+    // Switch to Code Playground tab
+    const codeTabBtn = document.querySelector('button[onclick*="codeTab"]');
+    if (codeTabBtn) switchTab('codeTab', codeTabBtn);
+
+    // Set editor value and language
+    const editor = document.getElementById('codeEditor');
+    const langSelect = document.getElementById('codeLang');
+    if (editor) editor.value = currentGeneratedCode;
+    if (langSelect && currentGeneratedLang) langSelect.value = currentGeneratedLang;
+
+    // Scroll to editor
+    editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    showActionToast("🚀 Code loaded into Playground!");
+  }
+
+  // ── Markdown-to-HTML renderer (lightweight, no external lib needed) ──────
+  function renderMarkdown(text) {
+    if (!text) return '';
+    let html = text
+      // Escape raw HTML
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      // Code blocks (must come before inline code)
+      .replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+        const trimmed = code.trim();
+        return `<div class="ai-code-block"><div class="ai-code-header"><span class="ai-code-lang">${lang || 'code'}</span><button class="ai-copy-snippet" onclick="copySnippet(this)" data-code="${encodeURIComponent(trimmed)}"><i class="fa-regular fa-copy"></i> Copy</button></div><pre><code>${trimmed}</code></pre></div>`;
+      })
+      // Headings
+      .replace(/^## (.+)$/gm, '<h2 class="ai-h2">$1</h2>')
+      .replace(/^### (.+)$/gm, '<h3 class="ai-h3">$1</h3>')
+      .replace(/^#### (.+)$/gm, '<h4 class="ai-h4">$1</h4>')
+      // Bold + italic
+      .replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Inline code
+      .replace(/`([^`]+)`/g, '<code class="ai-inline-code">$1</code>')
+      // Unordered lists
+      .replace(/^[\*\-] (.+)$/gm, '<li>$1</li>')
+      // Ordered lists
+      .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+      // Wrap consecutive <li> tags in <ul>
+      .replace(/(<li>[\s\S]*?<\/li>)+/g, m => `<ul class="ai-list">${m}</ul>`)
+      // Horizontal rule
+      .replace(/^---+$/gm, '<hr class="ai-hr">')
+      // Paragraphs (double newline)
+      .replace(/\n\n+/g, '</p><p class="ai-p">')
+      // Single line breaks
+      .replace(/\n/g, '<br>');
+
+    return `<p class="ai-p">${html}</p>`;
+  }
+
+  function copySnippet(btn) {
+    const code = decodeURIComponent(btn.getAttribute('data-code'));
+    navigator.clipboard.writeText(code).then(() => {
+      btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+      setTimeout(() => { btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy'; }, 2000);
+    });
+  }
+
   function askAI() {
     const input = document.getElementById('aiPrompt');
     const prompt = input.value.trim();
     if (!prompt) return;
 
     const box = document.getElementById('aiResponseBox');
-    box.innerHTML = '🤖 <em>Thinking and analyzing query...</em>';
+    const btn = document.getElementById('askAIBtn');
+    const actionBar = document.getElementById('aiActionBar');
+    if (actionBar) actionBar.style.display = 'none';
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    }
+    box.innerHTML = `
+      <div style="display:flex;align-items:center;gap:0.75rem;color:var(--accent-secondary);">
+        <i class="fa-solid fa-wand-magic-sparkles fa-spin" style="font-size:1.2rem;"></i>
+        <span style="font-weight:600;">Analyzing your query and generating response...</span>
+      </div>`;
 
     fetch('/api/ai/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: prompt })
     })
-    .then(r => r.json())
+    .then(async r => {
+      if (!r.ok) {
+        if (r.status === 401 || r.status === 302) {
+          throw new Error('Session expired. Please refresh the page and log in again.');
+        }
+        const errText = await r.text();
+        try {
+          const errObj = JSON.parse(errText);
+          throw new Error(errObj.answer || errObj.message || `Server error ${r.status}`);
+        } catch(e) {
+          throw new Error(`Server error ${r.status}`);
+        }
+      }
+      return r.json();
+    })
     .then(res => {
-      box.innerText = res.answer;
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Ask';
+      }
+
+      const answer = res.answer || 'No response generated.';
+      box.innerHTML = renderMarkdown(answer);
+
+      // Source badge
+      if (res.source) {
+        box.innerHTML += `<div style="margin-top:0.75rem;padding-top:0.5rem;border-top:1px solid var(--border-color);font-size:0.75rem;color:var(--text-secondary);">
+          <i class="fa-solid fa-microchip"></i> Powered by <strong>${res.source}</strong>
+        </div>`;
+      }
+
       input.value = '';
+
+      // Extract code for action bar
+      currentGeneratedCode = res.code || extractCodeFromMarkdown(answer);
+      currentGeneratedLang = res.lang || (prompt.toLowerCase().includes('javascript') ? 'javascript' : 'python');
+
+      if (currentGeneratedCode && actionBar) {
+        actionBar.style.display = 'flex';
+      }
+    })
+    .catch(err => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Ask';
+      }
+      box.innerHTML = `<div style="color:#ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> <strong>Error:</strong> ${err.message}</div>`;
     });
   }
+
+  // Initialize Code Editor default template on load
+  document.addEventListener('DOMContentLoaded', () => {
+    updateCodeTemplate();
+  });
 
   setInterval(loadMessages, 3000);
 </script>
