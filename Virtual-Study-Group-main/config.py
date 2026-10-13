@@ -25,13 +25,13 @@ class Config:
     
     # Firebase Web App JS Config
     FIREBASE_CONFIG = {
-        'apiKey': os.environ.get('FIREBASE_API_KEY', 'AIzaSyz3G3p09ELhVJWxsPJJeLEGn0'),
+        'apiKey': os.environ.get('FIREBASE_API_KEY', 'AIzaSyCmeN6ZIODz3G3p09ELhVJWxsPJJeLEGn0'),
         'authDomain': os.environ.get('FIREBASE_AUTH_DOMAIN', 'virtual-study-group-8c560.firebaseapp.com'),
-        'projectId': os.environ.get('FIREBASE_PROJECT_ID', 'virtual-studoup-560'),
+        'projectId': os.environ.get('FIREBASE_PROJECT_ID', 'virtual-study-group-8c560'),
         'storageBucket': os.environ.get('FIREBASE_STORAGE_BUCKET', 'virtual-study-group-8c560.firebasestorage.app'),
-        'messagingSenderId': os.environ.get('FIREBASE_MESSAGING_SENDER_ID', '295693778'),
-        'appId': os.environ.get('FIREBASE_APP_ID', '1:295678ad52c7a24f787c0d9a9ab'),
-        'measurementId': os.environ.get('FIREBASE_MEASUREMENT_ID', 'G-N3Z9W9M8')
+        'messagingSenderId': os.environ.get('FIREBASE_MESSAGING_SENDER_ID', '295671193778'),
+        'appId': os.environ.get('FIREBASE_APP_ID', '1:295671193778:web:8ad52c7a24f787c0d9a9ab'),
+        'measurementId': os.environ.get('FIREBASE_MEASUREMENT_ID', 'G-NR63Z9W9M8')
     }
 
     # File Upload Config

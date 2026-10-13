@@ -93,26 +93,53 @@
     return true;
   }
 
+  // Check redirect result on page load (in case signInWithRedirect was used)
+  document.addEventListener("DOMContentLoaded", function() {
+    if (window.firebase && firebase.auth) {
+      firebase.auth().getRedirectResult()
+        .then((result) => {
+          if (result && result.user) {
+            const user = result.user;
+            sendGoogleAuthToServer(user.email, user.displayName, user.uid);
+          }
+        })
+        .catch((err) => {
+          console.warn("Redirect auth result check:", err);
+        });
+    }
+  });
+
   function signUpWithGoogle() {
-    if (!document.getElementById('regCheck').checked) {
+    const termsEl = document.getElementById('regCheck');
+    if (termsEl && !termsEl.checked) {
       alert("Please accept the Terms & Conditions before signing up with Google.");
       return;
     }
     
-    // Attempt standard Firebase Google OAuth
     if (window.firebase && firebase.auth && firebaseConfig && firebaseConfig.apiKey) {
       const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+
       firebase.auth().signInWithPopup(provider)
         .then((result) => {
           const user = result.user;
           sendGoogleAuthToServer(user.email, user.displayName, user.uid);
         })
         .catch((err) => {
-          console.warn("Firebase Google popup error:", err);
-          fallbackGooglePrompt(err.message);
+          console.error("Firebase Google Auth error:", err);
+          if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+            if (confirm("Google Sign-In popup was closed or blocked by browser.\n\nWould you like to continue with full-page Google sign in?")) {
+              firebase.auth().signInWithRedirect(provider);
+              return;
+            }
+          } else if (err.code === 'auth/unauthorized-domain') {
+            alert("Firebase Domain Error: Your current domain is not added to Firebase Authorized Domains.\nDomain: " + window.location.hostname);
+          } else {
+            fallbackGooglePrompt(err.message);
+          }
         });
     } else {
-      fallbackGooglePrompt("Firebase Auth SDK is operating in local offline mode.");
+      fallbackGooglePrompt("Firebase Auth SDK not initialized.");
     }
   }
 

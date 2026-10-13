@@ -96,32 +96,59 @@
     return true;
   }
 
+  // Check redirect result on page load (in case signInWithRedirect was used)
+  document.addEventListener("DOMContentLoaded", function() {
+    if (window.firebase && firebase.auth) {
+      firebase.auth().getRedirectResult()
+        .then((result) => {
+          if (result && result.user) {
+            const user = result.user;
+            sendGoogleAuthToServer(user.email, user.displayName, user.uid);
+          }
+        })
+        .catch((err) => {
+          console.warn("Redirect auth result check:", err);
+        });
+    }
+  });
+
   function signInWithGoogle() {
-    if (!document.getElementById('loginCheck').checked) {
+    const termsEl = document.getElementById('loginCheck');
+    if (termsEl && !termsEl.checked) {
       alert("Please accept the Terms & Conditions before signing in with Google.");
       return;
     }
     
-    // Attempt standard Firebase Google OAuth
     if (window.firebase && firebase.auth && firebaseConfig && firebaseConfig.apiKey) {
       const provider = new firebase.auth.GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
       firebase.auth().signInWithPopup(provider)
         .then((result) => {
           const user = result.user;
           sendGoogleAuthToServer(user.email, user.displayName, user.uid);
         })
         .catch((err) => {
-          console.warn("Firebase Google popup error:", err);
-          // If domain unauthorized (auth/unauthorized-domain), popup blocked, or API key restricted in local dev:
-          fallbackGooglePrompt(err.message);
+          console.error("Firebase Google Auth error:", err);
+          if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+            // If popup was blocked or auto-closed by browser restrictions, fall back to redirect
+            if (confirm("Google Sign-In popup was closed or blocked by browser.\n\nWould you like to continue with full-page Google sign in?")) {
+              firebase.auth().signInWithRedirect(provider);
+              return;
+            }
+          } else if (err.code === 'auth/unauthorized-domain') {
+            alert("Firebase Domain Error: Your current domain is not added to Firebase Authorized Domains.\nDomain: " + window.location.hostname);
+          } else {
+            fallbackGooglePrompt(err.message);
+          }
         });
     } else {
-      fallbackGooglePrompt("Firebase Auth SDK is operating in local offline mode.");
+      fallbackGooglePrompt("Firebase Auth SDK not initialized.");
     }
   }
 
   function fallbackGooglePrompt(reason) {
-    const email = prompt("Google OAuth Notice: (" + (reason || 'Local Environment') + ")\n\nEnter your Google email address to sign in directly:", "student@gmail.com");
+    const email = prompt("Google Sign-In Notice (" + (reason || 'Direct Verification') + "):\n\nEnter your Google email to sign in:", "student@gmail.com");
     if (email && email.includes('@')) {
       const displayName = email.split('@')[0];
       sendGoogleAuthToServer(email, displayName, 'google_' + Date.now());
