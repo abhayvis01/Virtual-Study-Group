@@ -41,7 +41,7 @@
       <i class="fa-solid fa-comments"></i> <span>Chat</span>
     </button>
     <button class="segmented-tab" onclick="switchTab('codeTab', this)">
-      <i class="fa-solid fa-code"></i> <span>Code Sandbox</span>
+      <i class="fa-solid fa-code"></i> <span>Code Lab</span>
     </button>
     <button class="segmented-tab" onclick="switchTab('aiTab', this)">
       <i class="fa-solid fa-wand-magic-sparkles"></i> <span>AI Assistant</span>
@@ -114,12 +114,12 @@
         <i class="fa-solid fa-chevron-right tool-arrow"></i>
       </div>
 
-      <div class="tool-item" onclick="selectTabFromDialog('codeTab')" data-name="code playground python javascript ide sandbox run execution">
+      <div class="tool-item" onclick="selectTabFromDialog('codeTab')" data-name="code lab playground python javascript ide sandbox run execution">
         <div class="tool-icon" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8;">
           <i class="fa-solid fa-code"></i>
         </div>
         <div class="tool-info">
-          <div class="tool-title">Code Playground</div>
+          <div class="tool-title">Code Lab</div>
           <div class="tool-desc">Live execution for Python 3 & JavaScript</div>
         </div>
         <i class="fa-solid fa-chevron-right tool-arrow"></i>
@@ -326,7 +326,7 @@
           <i class="fa-solid fa-terminal"></i>
         </div>
         <div>
-          <h3 style="font-weight: 800; font-size: 1.2rem;">Live Code Playground</h3>
+          <h3 style="font-weight: 800; font-size: 1.2rem;">Live Code Lab</h3>
           <p style="font-size: 0.825rem; color: var(--text-secondary);">Real-time runtime execution benchmarking in milliseconds</p>
         </div>
       </div>
@@ -631,10 +631,10 @@
 Ask a study question or click any prompt above to receive a step-by-step academic explanation!
     </div>
 
-    <!-- AI Action Bar (Copy Code, Run in Playground, Share) -->
+    <!-- AI Action Bar (Copy Code, Run in Code Lab, Share) -->
     <div id="aiActionBar" style="display: none; gap: 0.6rem; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap;">
       <button id="sendToPlaygroundBtn" onclick="transferCodeToPlayground()" class="btn btn-primary btn-sm">
-        <i class="fa-solid fa-play"></i> Run in Code Playground
+        <i class="fa-solid fa-play"></i> Run in Code Lab
       </button>
       <button onclick="copyAICode()" class="btn btn-secondary btn-sm" id="copyCodeBtn">
         <i class="fa-regular fa-copy"></i> Copy Code
@@ -1484,7 +1484,7 @@ console.log(computePrimes(8));`
 
     // Scroll to editor
     editor.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    showActionToast("🚀 Code loaded into Playground!");
+    showActionToast("🚀 Code loaded into Code Lab!");
   }
 
   // ── Markdown-to-HTML renderer (lightweight, no external lib needed) ──────
