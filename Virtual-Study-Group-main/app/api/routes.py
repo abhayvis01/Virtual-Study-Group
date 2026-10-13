@@ -304,30 +304,34 @@ def _extract_code_and_lang(text):
     return None, 'python'
 
 
-def _call_gemini(prompt, api_key, context_str=None):
-    """Call Google Gemini API with user study context. Returns (answer_text, code, lang, model) or None."""
+def _call_gemini(prompt, api_key, context_str=None, resources_context=None):
+    """Call Google Gemini API with user study context and uploaded notes. Returns (answer_text, code, lang, model) or None."""
     try:
         import requests as rlib
         system_msg = (
-            "You are an expert AI study assistant and academic mentor for the Virtual Study Group collaborative learning platform. "
-            "You have direct awareness of the student's learning workspace, enrolled study rooms, and study statistics. "
-            "Deliver professional, highly structured responses like Gemini with bold headings, clean bullet points, numbered steps, "
-            "and concise actionable takeaways. "
-            "For coding questions, always include clean, commented, runnable code blocks with language specifiers (```python or ```javascript). "
-            "For concept questions or quizzes, use headings, interactive multiple-choice questions, and clear step-by-step explanations."
+            "You are 'Virtual Study Group AI', an advanced academic tutor and study assistant built into the Virtual Study Group platform.\n"
+            "You have direct awareness of the student's learning workspace, enrolled study rooms, and study statistics.\n"
+            "CRITICAL INSTRUCTIONS FOR UPLOADED NOTES & STUDY RESOURCES:\n"
+            "1. When the student asks about notes, uploaded resources, syllabus, questions, or specific topics, CAREFULLY examine and extract the information from the [Uploaded Study Resources & Notes] section below.\n"
+            "2. Answer directly based on what is in those notes and files, and explicitly cite the note/resource title.\n"
+            "3. If asked to explain or quiz on uploaded notes, generate tailored questions and clear explanations based directly on the notes content.\n"
+            "4. Deliver professional, highly structured responses like Gemini with bold headings, clean bullet points, numbered steps, and concise takeaways.\n"
+            "5. For coding requests, provide clean, commented, runnable code blocks."
         )
         if context_str:
             system_msg += f"\n\n[Active Student Context]:\n{context_str}"
+        if resources_context:
+            system_msg += f"\n\n[Uploaded Study Resources & Notes]:\n{resources_context}"
 
         full_prompt = f"{system_msg}\n\nStudent Query:\n{prompt}"
-        for model in ["gemini-2.5-flash", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-pro", "gemini-pro-latest"]:
+        for model in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-pro", "gemini-1.5-pro"]:
             url = (f"https://generativelanguage.googleapis.com/v1beta/models/"
                    f"{model}:generateContent?key={api_key}")
             payload = {
                 "contents": [{"parts": [{"text": full_prompt}]}],
-                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 2048}
+                "generationConfig": {"temperature": 0.65, "maxOutputTokens": 3072}
             }
-            resp = rlib.post(url, json=payload, timeout=15)
+            resp = rlib.post(url, json=payload, timeout=20)
             if resp.status_code == 200:
                 candidates = resp.json().get('candidates', [])
                 if candidates:
@@ -336,9 +340,9 @@ def _call_gemini(prompt, api_key, context_str=None):
                         text = parts[0]['text']
                         code, lang = _extract_code_and_lang(text)
                         return text, code, lang, model
-            elif resp.status_code in (400, 403):
-                print(f"[Gemini] HTTP {resp.status_code} for {model}: {resp.text[:200]}")
-                break
+            elif resp.status_code in (400, 403, 404):
+                print(f"[Gemini] HTTP {resp.status_code} for {model}: {resp.text[:150]}")
+                continue
     except Exception as exc:
         print(f"[Gemini] Error: {exc}")
     return None
@@ -379,12 +383,27 @@ def _call_openai(prompt, api_key, context_str=None):
     return None
 
 
-def _builtin_ai(prompt, user=None, user_groups=None):
+def _builtin_ai(prompt, user=None, user_groups=None, resources_context=None):
     """
     High-accuracy built-in Virtual Study Group AI engine with interactive learning actions.
     Returns (answer_text, code_snippet | None, lang).
     """
     lower = prompt.lower()
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # RESOURCE & STUDY NOTES ANALYSIS (When asking about uploaded materials)
+    # ──────────────────────────────────────────────────────────────────────────
+    if resources_context and any(k in lower for k in ['note', 'notes', 'resource', 'resources', 'pdf', 'upload', 'file', 'read', 'doc', 'syllabus', 'material', 'lecture']):
+        answer = (
+            f"## 📖 Study Resources & Notes Insights\n\n"
+            f"Here are the active study materials and notes registered in your study room:\n\n"
+            f"{resources_context}\n\n"
+            f"### 💡 Next Study Steps:\n"
+            f"* 📝 Convert key definitions from these notes into **[Flashcards](#)** for active recall.\n"
+            f"* 🗺️ Outline complex concept diagrams on the **[Whiteboard](#)**.\n"
+            f"* ❓ Ask me specific questions about any of the notes above, and I will explain them step-by-step!"
+        )
+        return answer, None, 'python'
 
     # ──────────────────────────────────────────────────────────────────────────
     # 0. GREETINGS & INTRODUCTIONS
@@ -876,6 +895,9 @@ def ai_ask():
         if not prompt:
             return jsonify({'status': 'error', 'answer': 'Please provide a question or task.'}), 400
 
+        # Optional group_id parameter from the current room
+        group_id = data.get('group_id')
+        
         # Student Context Gathering
         user_groups = GroupService.get_user_groups(current_user.id) if current_user.is_authenticated else []
         group_names = [g.get('name') for g in user_groups if g.get('name')]
@@ -892,10 +914,55 @@ def ai_ask():
             f"Enrolled Study Rooms: {', '.join(group_names) if group_names else 'None yet'}\n"
         )
 
-        # 1. Try Google Gemini
+        # Gather Study Resources & Uploaded Notes from the current room and user's rooms
+        resources_list = []
+        target_group_ids = []
+        if group_id:
+            target_group_ids.append(str(group_id))
+        for g in user_groups:
+            gid = str(g.get('_id') or g.get('id', ''))
+            if gid and gid not in target_group_ids:
+                target_group_ids.append(gid)
+
+        for gid in target_group_ids[:5]:
+            try:
+                room_res = ResourceService.get_group_resources(gid)
+                for r in room_res:
+                    resources_list.append(r)
+            except Exception as e:
+                print(f"[Resource Fetch Notice]: {e}")
+
+        # Format resources text for AI comprehension
+        resources_context_snippets = []
+        for res in resources_list[:12]:
+            r_name = res.get('name', 'Untitled Resource')
+            r_type = res.get('type', 'note')
+            r_content = res.get('content', '').strip()
+            r_file = res.get('file_url', '')
+
+            # If the file is stored locally on the server and is a text file, read snippet
+            file_extra = ""
+            if r_file and r_file.startswith('/static/uploads/'):
+                try:
+                    rel_path = r_file.lstrip('/')
+                    full_local = os.path.join(current_app.root_path, rel_path.replace('static/', 'static' + os.sep))
+                    if os.path.exists(full_local) and any(full_local.lower().endswith(ext) for ext in ['.txt', '.md', '.py', '.js', '.csv', '.json']):
+                        with open(full_local, 'r', encoding='utf-8', errors='ignore') as f:
+                            file_content = f.read(2500)
+                            if file_content:
+                                file_extra = f"\n[File Contents Snippet]:\n{file_content}"
+                except Exception as ex:
+                    print(f"[Local File Read Notice]: {ex}")
+
+            snippet = f"- **{r_name}** ({r_type.upper()}):\n{r_content}{file_extra}"
+            resources_context_snippets.append(snippet)
+
+        resources_context = "\n\n".join(resources_context_snippets) if resources_context_snippets else None
+
+        # 1. Try Google Gemini with full note context
         gemini_key = current_app.config.get('GEMINI_API_KEY') or os.environ.get('GEMINI_API_KEY', '')
         if gemini_key:
-            result = _call_gemini(prompt, gemini_key, context_str=context_str)
+            result = _call_gemini(prompt, gemini_key, context_str=context_str, resources_context=resources_context)
             if result:
                 text, code, lang, model = result
                 return jsonify({
@@ -909,7 +976,7 @@ def ai_ask():
         # 2. Try OpenAI
         openai_key = current_app.config.get('OPENAI_API_KEY') or os.environ.get('OPENAI_API_KEY', '')
         if openai_key:
-            result = _call_openai(prompt, openai_key, context_str=context_str)
+            result = _call_openai(prompt, openai_key, context_str=f"{context_str}\n\n{resources_context or ''}")
             if result:
                 text, code, lang = result
                 return jsonify({
@@ -920,8 +987,8 @@ def ai_ask():
                     'source': 'OpenAI GPT-4o-mini'
                 })
 
-        # 3. Built-in intelligent engine
-        answer, code, lang = _builtin_ai(prompt, user=current_user, user_groups=user_groups)
+        # 3. Built-in intelligent engine with notes support
+        answer, code, lang = _builtin_ai(prompt, user=current_user, user_groups=user_groups, resources_context=resources_context)
         return jsonify({
             'status': 'success',
             'answer': answer,

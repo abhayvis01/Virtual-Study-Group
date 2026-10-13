@@ -368,10 +368,13 @@
         sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
       }
 
+      const groupMatch = window.location.pathname.match(/\/groups\/([a-zA-Z0-9_\-]+)/);
+      const activeGroupId = groupMatch ? groupMatch[1] : null;
+
       fetch('/api/ai/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: prompt })
+        body: JSON.stringify({ prompt: prompt, group_id: activeGroupId })
       })
       .then(async r => {
         if (!r.ok) {

@@ -1555,7 +1555,7 @@ console.log(computePrimes(8));`
     fetch('/api/ai/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: prompt })
+      body: JSON.stringify({ prompt: prompt, group_id: '{{ group.id }}' })
     })
     .then(async r => {
       if (!r.ok) {
