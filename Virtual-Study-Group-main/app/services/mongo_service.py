@@ -248,7 +248,16 @@ class ResourceService:
     def get_resource_by_id(resource_id):
         rid = str(resource_id)
         if mongo.is_connected and mongo.db is not None:
-            return mongo.db.resources.find_one({'_id': rid})
+            doc = mongo.db.resources.find_one({'_id': rid})
+            if not doc:
+                try:
+                    from bson.objectid import ObjectId
+                    doc = mongo.db.resources.find_one({'_id': ObjectId(rid)})
+                except Exception:
+                    pass
+            if not doc:
+                doc = mongo.db.resources.find_one({'id': rid})
+            return doc
         return _MEMORY_DB['resources'].get(rid)
 
     @staticmethod

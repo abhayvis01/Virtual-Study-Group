@@ -37,19 +37,28 @@ class FirebaseService:
             if bucket_name and firebase_admin._apps:
                 bucket = storage.bucket(bucket_name)
                 blob = bucket.blob(f"{folder}/{unique_name}")
+                file_storage.seek(0)
                 blob.upload_from_file(file_storage, content_type=file_storage.content_type)
-                blob.make_public()
-                logger.info(f"Uploaded file to Firebase Storage: {blob.public_url}")
-                return filename, blob.public_url
+                try:
+                    blob.make_public()
+                    pub_url = blob.public_url
+                except Exception:
+                    # In uniform bucket-level access, make_public() is disabled
+                    pub_url = f"https://storage.googleapis.com/{bucket_name}/{folder}/{unique_name}"
+                logger.info(f"Uploaded file to Firebase Storage: {pub_url}")
+                return filename, pub_url
         except Exception as e:
             logger.warning(f"Firebase Storage upload failed: {e}. Falling back to local filesystem storage.")
 
         # Local Filesystem Storage Fallback
-        upload_folder = current_app.config.get('UPLOAD_FOLDER', os.path.join(current_app.root_path, 'static', 'uploads'))
-        os.makedirs(upload_folder, exist_ok=True)
-        file_path = os.path.join(upload_folder, unique_name)
-        file_storage.seek(0)
-        file_storage.save(file_path)
-        
-        local_url = f"/static/uploads/{unique_name}"
-        return filename, local_url
+        try:
+            upload_folder = current_app.config.get('UPLOAD_FOLDER', os.path.join(current_app.root_path, 'static', 'uploads'))
+            os.makedirs(upload_folder, exist_ok=True)
+            file_path = os.path.join(upload_folder, unique_name)
+            file_storage.seek(0)
+            file_storage.save(file_path)
+            local_url = f"/static/uploads/{unique_name}"
+            return filename, local_url
+        except Exception as fe:
+            logger.error(f"Local file save error: {fe}")
+            return filename, ""
