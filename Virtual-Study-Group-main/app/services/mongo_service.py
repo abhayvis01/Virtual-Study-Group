@@ -435,8 +435,18 @@ class AnalyticsService:
         else:
             _MEMORY_DB['study_logs'][log_id] = doc
             if uid in _MEMORY_DB['users']:
-                _MEMORY_DB['users'][uid]['total_study_minutes'] = _MEMORY_DB['users'][uid].get('total_study_minutes', 0) + duration_minutes
-                _MEMORY_DB['users'][uid]['xp_points'] = _MEMORY_DB['users'][uid].get('xp_points', 50) + xp_earned
+                u_mem = _MEMORY_DB['users'][uid]
+                last_date = u_mem.get('last_study_date')
+                curr_streak = u_mem.get('streak_count', 1)
+                if last_date != today_date:
+                    yesterday = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
+                    new_streak = (curr_streak + 1) if last_date == yesterday else 1
+                else:
+                    new_streak = curr_streak
+                u_mem['total_study_minutes'] = u_mem.get('total_study_minutes', 0) + duration_minutes
+                u_mem['xp_points'] = u_mem.get('xp_points', 50) + xp_earned
+                u_mem['streak_count'] = new_streak
+                u_mem['last_study_date'] = today_date
         return doc
 
     @staticmethod
@@ -547,6 +557,48 @@ class CalendarService:
         if mongo.is_connected and mongo.db is not None:
             return list(mongo.db.calendar.find({'group_id': gid}).sort('date', 1))
         return [e for e in _MEMORY_DB['calendar'].values() if e.get('group_id') == gid]
+
+
+class PresenceService:
+    @staticmethod
+    def update_heartbeat(group_id, user_id, username):
+        gid = str(group_id)
+        uid = str(user_id)
+        now = time.time()
+        doc = {
+            'group_id': gid,
+            'user_id': uid,
+            'username': username,
+            'last_seen': now
+        }
+        if mongo.is_connected and mongo.db is not None:
+            mongo.db.presence.update_one(
+                {'group_id': gid, 'user_id': uid},
+                {'$set': {'username': username, 'last_seen': now}},
+                upsert=True
+            )
+        else:
+            if 'presence' not in _MEMORY_DB:
+                _MEMORY_DB['presence'] = {}
+            if gid not in _MEMORY_DB['presence']:
+                _MEMORY_DB['presence'][gid] = {}
+            _MEMORY_DB['presence'][gid][uid] = {'username': username, 'last_seen': now}
+
+    @staticmethod
+    def get_online_users(group_id, timeout_seconds=30):
+        gid = str(group_id)
+        threshold = time.time() - timeout_seconds
+        online_users = []
+        if mongo.is_connected and mongo.db is not None:
+            docs = list(mongo.db.presence.find({'group_id': gid, 'last_seen': {'$gte': threshold}}))
+            for d in docs:
+                online_users.append({'user_id': d['user_id'], 'username': d.get('username', 'Student')})
+        else:
+            group_pres = _MEMORY_DB.get('presence', {}).get(gid, {})
+            for uid, info in list(group_pres.items()):
+                if info.get('last_seen', 0) >= threshold:
+                    online_users.append({'user_id': uid, 'username': info.get('username', 'Student')})
+        return online_users
 
 
 class SearchService:

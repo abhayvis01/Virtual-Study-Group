@@ -15,7 +15,12 @@
     <p style="color: var(--text-secondary); font-size: 0.95rem; max-width: 700px; line-height: 1.5;">{{ group.description }}</p>
   </div>
 
-  <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+    <!-- Online Students Real-Time Pill -->
+    <div id="onlineBadgeWrap" style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); padding: 0.45rem 0.85rem; border-radius: var(--radius-md); font-size: 0.85rem; font-weight: 700; color: #10b981; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" onclick="showOnlineMembersModal()" title="Click to see online students">
+      <span style="width: 9px; height: 9px; background: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 8px #10b981; animation: pulseOnline 2s infinite;"></span>
+      <span id="onlineCountText"><strong id="onlineCountNumber">1</strong> Online Now</span>
+    </div>
+
     <div style="background: var(--bg-input); padding: 0.5rem 0.9rem; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.85rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem;">
       <i class="fa-solid fa-key" style="color: #f59e0b;"></i> Room Code: <span id="codeSpan" style="font-family: var(--font-mono); letter-spacing: 1px; color: var(--accent-secondary);">{{ group.room_code }}</span>
       <button onclick="navigator.clipboard.writeText('{{ group.room_code }}'); alert('Room Code Copied to Clipboard!');" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 2px 4px; border-radius: 4px;" title="Copy Code"><i class="fa-regular fa-copy"></i></button>
@@ -30,6 +35,27 @@
         </button>
       </form>
     {% endif %}
+  </div>
+</div>
+
+<!-- Modal: Online Students List -->
+<div id="onlineMembersModal" class="modal-overlay" style="display: none;" onclick="if(event.target === this) closeOnlineMembersModal()">
+  <div class="modal-content" style="max-width: 440px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+      <div style="display: flex; align-items: center; gap: 0.6rem;">
+        <span style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></span>
+        <h3 style="font-weight: 800; font-size: 1.2rem; margin: 0;">Online Students</h3>
+      </div>
+      <button type="button" onclick="closeOnlineMembersModal()" class="modal-close-btn" aria-label="Close">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Students actively present in this study room right now:</p>
+    <div id="onlineMembersList" style="display: flex; flex-direction: column; gap: 0.6rem; max-height: 280px; overflow-y: auto;">
+      <div style="padding: 0.6rem 0.8rem; background: var(--bg-input); border-radius: 8px; color: var(--text-secondary); font-size: 0.875rem;">
+        Checking presence...
+      </div>
+    </div>
   </div>
 </div>
 
@@ -465,14 +491,33 @@
       <h3 style="font-weight: 800; margin-bottom: 0.5rem;"><i class="fa-solid fa-stopwatch" style="color: #ef4444;"></i> Focus Session</h3>
       <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 1rem;">Tracked & Logged to MongoDB Atlas</p>
 
-      <div id="timerDisplay" style="font-size: 3.5rem; font-weight: 800; font-family: monospace; color: var(--accent-primary); margin-bottom: 1.25rem;">
+      <div style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1rem;">
+        <button id="pomoBtn25" onclick="setTimerDuration(25)" class="btn btn-secondary btn-sm" style="font-weight: 700;">25m Pomodoro</button>
+        <button id="pomoBtn15" onclick="setTimerDuration(15)" class="btn btn-secondary btn-sm">15m Short</button>
+        <button id="pomoBtn5" onclick="setTimerDuration(5)" class="btn btn-secondary btn-sm">5m Sprint</button>
+        <button id="pomoBtn1" onclick="setTimerDuration(1)" class="btn btn-secondary btn-sm" title="Quick test mode">1m Test</button>
+      </div>
+
+      <div id="timerDisplay" style="font-size: 3.5rem; font-weight: 800; font-family: monospace; color: var(--accent-primary); margin-bottom: 0.75rem;">
         25:00
       </div>
 
-      <div style="display: flex; gap: 0.75rem; justify-content: center;">
-        <button id="startTimerBtn" onclick="toggleTimer()" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start</button>
+      <div id="sessionElapsedBadge" style="display: none; margin-bottom: 1rem;">
+        <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.85rem; padding: 0.35rem 0.8rem;">
+          <i class="fa-solid fa-fire"></i> <span id="elapsedDisplay">0m</span> studied in this run (+<span id="earnedXpDisplay">0</span> XP)
+        </span>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+        <button id="startTimerBtn" onclick="toggleTimer()" class="btn btn-primary"><i class="fa-solid fa-play"></i> Start Focus</button>
+        <button onclick="logCurrentSessionEarly()" id="logEarlyBtn" class="btn btn-secondary" style="border-color: rgba(16, 185, 129, 0.4); color: #10b981; display: none;" title="Save minutes studied so far without waiting for timer to expire">
+          <i class="fa-solid fa-check-double"></i> Save Studied Time
+        </button>
         <button onclick="resetTimer()" class="btn btn-secondary"><i class="fa-solid fa-rotate-left"></i> Reset</button>
       </div>
+      <p style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 1rem; margin-bottom: 0;">
+        💡 <em>Focus minutes automatically save to your daily target goal and grant +10 XP per minute!</em>
+      </p>
     </div>
 
     <div class="card" style="padding: 2rem;">
@@ -1230,31 +1275,79 @@ Ask a study question or click any prompt above to receive a step-by-step academi
   }
 
   // Pomodoro Timer JS
-  let timerInterval = null, timeLeft = 25 * 60, isRunning = false;
+  let timerInterval = null;
+  let defaultDurationMinutes = 25;
+  let timeLeft = 25 * 60;
+  let isRunning = false;
+  let elapsedSeconds = 0;
+
+  function setTimerDuration(mins) {
+    if (isRunning) {
+      if (!confirm('Timer is running. Change duration and restart session?')) return;
+      clearInterval(timerInterval);
+      isRunning = false;
+      document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-play"></i> Start Focus';
+    }
+    defaultDurationMinutes = mins;
+    timeLeft = mins * 60;
+    elapsedSeconds = 0;
+    updateTimerDisplay();
+    ['25', '15', '5', '1'].forEach(m => {
+      const b = document.getElementById('pomoBtn' + m);
+      if (b) {
+        if (parseInt(m) === mins) {
+          b.classList.remove('btn-secondary');
+          b.classList.add('btn-primary');
+        } else {
+          b.classList.remove('btn-primary');
+          b.classList.add('btn-secondary');
+        }
+      }
+    });
+    const badge = document.getElementById('sessionElapsedBadge');
+    if (badge) badge.style.display = 'none';
+    const logBtn = document.getElementById('logEarlyBtn');
+    if (logBtn) logBtn.style.display = 'none';
+  }
+
   function toggleTimer() {
     const btn = document.getElementById('startTimerBtn');
+    const logBtn = document.getElementById('logEarlyBtn');
+    const badge = document.getElementById('sessionElapsedBadge');
+
     if (isRunning) {
       clearInterval(timerInterval);
       isRunning = false;
-      btn.innerHTML = '<i class="fa-solid fa-play"></i> Resume';
+      btn.innerHTML = '<i class="fa-solid fa-play"></i> Resume Focus';
     } else {
       isRunning = true;
       btn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
+      if (badge) badge.style.display = 'block';
+      if (logBtn && elapsedSeconds >= 30) logBtn.style.display = 'inline-flex';
+
       timerInterval = setInterval(() => {
         if (timeLeft <= 0) {
           clearInterval(timerInterval);
-          fetch('/api/analytics/log-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ group_id: groupId, group_name: groupName, duration_minutes: 25 })
-          })
-          .then(r => r.json())
-          .then(res => {
-            alert('🎉 Pomodoro Session Completed! +250 XP earned and logged.');
-          });
+          isRunning = false;
+          btn.innerHTML = '<i class="fa-solid fa-play"></i> Start Focus';
+          const sessionMins = Math.max(1, Math.round(elapsedSeconds / 60) || defaultDurationMinutes);
+          sendStudySessionLog(sessionMins, true);
         } else {
           timeLeft--;
+          elapsedSeconds++;
           updateTimerDisplay();
+
+          // Update elapsed badge
+          const curMins = Math.floor(elapsedSeconds / 60);
+          const curSecs = elapsedSeconds % 60;
+          const elDisplay = document.getElementById('elapsedDisplay');
+          const xpDisplay = document.getElementById('earnedXpDisplay');
+          if (elDisplay) elDisplay.innerText = curMins > 0 ? `${curMins}m ${curSecs}s` : `${curSecs}s`;
+          if (xpDisplay) xpDisplay.innerText = Math.max(10, curMins * 10);
+
+          if (logBtn && elapsedSeconds >= 30) {
+            logBtn.style.display = 'inline-flex';
+          }
         }
       }, 1000);
     }
@@ -1263,15 +1356,114 @@ Ask a study question or click any prompt above to receive a step-by-step academi
   function resetTimer() {
     clearInterval(timerInterval);
     isRunning = false;
-    timeLeft = 25 * 60;
-    document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-play"></i> Start';
+    timeLeft = defaultDurationMinutes * 60;
+    elapsedSeconds = 0;
+    document.getElementById('startTimerBtn').innerHTML = '<i class="fa-solid fa-play"></i> Start Focus';
+    const badge = document.getElementById('sessionElapsedBadge');
+    if (badge) badge.style.display = 'none';
+    const logBtn = document.getElementById('logEarlyBtn');
+    if (logBtn) logBtn.style.display = 'none';
     updateTimerDisplay();
+  }
+
+  function logCurrentSessionEarly() {
+    if (elapsedSeconds < 30) {
+      alert("Study for at least 30 seconds to record your focused time.");
+      return;
+    }
+    const minsToRecord = Math.max(1, Math.round(elapsedSeconds / 60));
+    sendStudySessionLog(minsToRecord, false);
+    resetTimer();
+  }
+
+  function sendStudySessionLog(durationMins, isFullComplete) {
+    fetch('/api/analytics/log-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        group_id: groupId,
+        group_name: groupName,
+        duration_minutes: durationMins
+      })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 'success') {
+        const xpEarned = res.xp_earned || (durationMins * 10);
+        const title = isFullComplete ? '🎉 Pomodoro Interval Complete!' : '✅ Study Time Saved!';
+        alert(`${title}\n+${durationMins} minutes added to your daily focus target!\n+${xpEarned} XP earned!`);
+        // Refresh leaderboard if open
+        loadLeaderboard();
+      }
+    })
+    .catch(err => {
+      console.error('Error logging focus session:', err);
+    });
   }
 
   function updateTimerDisplay() {
     const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
     const s = (timeLeft % 60).toString().padStart(2, '0');
     document.getElementById('timerDisplay').innerText = `${m}:${s}`;
+  }
+
+  // --- Real-time Online Presence Sync ---
+  let onlineUsersCache = [];
+  function pingPresence() {
+    fetch('/api/presence/ping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ group_id: groupId })
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 'success') {
+        onlineUsersCache = res.users || [];
+        const count = res.count || 1;
+        const countNum = document.getElementById('onlineCountNumber');
+        const countTxt = document.getElementById('onlineCountText');
+        if (countNum) countNum.innerText = count;
+        if (countTxt) {
+          countTxt.innerHTML = `<strong>${count}</strong> ${count === 1 ? 'Student' : 'Students'} Online`;
+        }
+        renderOnlineModalList();
+      }
+    })
+    .catch(e => {
+      console.log('Presence ping notice:', e);
+    });
+  }
+
+  function showOnlineMembersModal() {
+    const modal = document.getElementById('onlineMembersModal');
+    if (modal) {
+      renderOnlineModalList();
+      modal.style.display = 'flex';
+    }
+  }
+
+  function closeOnlineMembersModal() {
+    const modal = document.getElementById('onlineMembersModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  function renderOnlineModalList() {
+    const list = document.getElementById('onlineMembersList');
+    if (!list) return;
+    if (!onlineUsersCache || onlineUsersCache.length === 0) {
+      list.innerHTML = `<div style="padding: 0.75rem; color: var(--text-secondary); text-align: center;">You are currently online in this room.</div>`;
+      return;
+    }
+    list.innerHTML = onlineUsersCache.map(u => `
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.65rem 0.9rem; background: var(--bg-input); border-radius: 8px; border: 1px solid var(--border-color);">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 6px #10b981;"></span>
+          <span style="font-weight: 700; color: var(--text-primary); font-size: 0.9rem;">${u.username}</span>
+          ${u.username === '{{ current_user.username }}' ? '<span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; font-size: 0.7rem; padding: 0.15rem 0.4rem;">You</span>' : ''}
+        </div>
+        <span style="font-size: 0.75rem; color: #10b981; font-weight: 600;"><i class="fa-solid fa-circle" style="font-size: 0.5rem; margin-right: 3px;"></i> Active</span>
+      </div>
+    `).join('');
   }
 
   // Ambience Sound Synth
@@ -1706,8 +1898,10 @@ console.log(computePrimes(8));`
   // Initialize Code Editor default template on load
   document.addEventListener('DOMContentLoaded', () => {
     updateCodeTemplate();
+    pingPresence();
   });
 
   setInterval(loadMessages, 3000);
+  setInterval(pingPresence, 5000);
 </script>
 {% endblock %}

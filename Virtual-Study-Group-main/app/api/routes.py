@@ -8,7 +8,7 @@ from flask import Blueprint, request, jsonify, current_app
 from flask_login import login_required, current_user
 from app.services.mongo_service import (
     TaskService, WhiteboardService, FlashcardService, AnalyticsService,
-    PollService, CalendarService, SearchService, DatabaseMonitor, ResourceService, GroupService
+    PollService, CalendarService, SearchService, DatabaseMonitor, ResourceService, GroupService, PresenceService
 )
 
 bp = Blueprint('api', __name__)
@@ -238,7 +238,46 @@ def log_session():
         group_name=group_name,
         duration_minutes=duration
     )
-    return jsonify({'status': 'success', 'log': log, 'xp_earned': duration * 10})
+    from app.services.mongo_service import User
+    refreshed_user = User.get_by_id(current_user.id)
+    total_minutes = refreshed_user.total_study_minutes if refreshed_user else current_user.total_study_minutes
+    xp_total = refreshed_user.xp_points if refreshed_user else current_user.xp_points
+    streak = refreshed_user.streak_count if refreshed_user else current_user.streak_count
+
+    return jsonify({
+        'status': 'success',
+        'log': log,
+        'xp_earned': duration * 10,
+        'total_study_minutes': total_minutes,
+        'xp_points': xp_total,
+        'streak_count': streak
+    })
+
+# --- Real-Time Online Presence API ---
+@bp.route('/presence/ping', methods=['POST'])
+@login_required
+def presence_ping():
+    data = request.get_json() or {}
+    group_id = data.get('group_id')
+    if not group_id:
+        return jsonify({'status': 'error', 'message': 'group_id required'}), 400
+    PresenceService.update_heartbeat(group_id, current_user.id, current_user.username)
+    online_users = PresenceService.get_online_users(group_id)
+    return jsonify({
+        'status': 'success',
+        'count': len(online_users),
+        'users': online_users
+    })
+
+@bp.route('/presence/online/<group_id>', methods=['GET'])
+@login_required
+def get_online_presence(group_id):
+    online_users = PresenceService.get_online_users(group_id)
+    return jsonify({
+        'status': 'success',
+        'count': len(online_users),
+        'users': online_users
+    })
 
 @bp.route('/leaderboard/<group_id>', methods=['GET'])
 @login_required

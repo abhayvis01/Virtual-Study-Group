@@ -140,9 +140,11 @@ def download_resource(resource_id):
             return redirect(file_url)
 
         # 4. If neither binary data nor file exists on server (e.g. legacy upload prior to cloud persistence),
-        # render a graceful study note viewer page instead of throwing raw 404
+        # render an interactive document viewer that allows one-click file attachment so the user can easily re-attach and immediately view the PDF.
         content_text = res.get('content', '')
         res_name = res.get('name', 'Study Document')
+        res_id = res.get('_id') or resource_id
+        group_id = res.get('group_id', '')
         return f"""
         <!DOCTYPE html>
         <html>
@@ -156,9 +158,12 @@ def download_resource(resource_id):
                 .card {{ background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 2.5rem; max-width: 600px; width: 100%; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }}
                 h2 {{ margin-top: 0; color: #38bdf8; display: flex; align-items: center; gap: 0.75rem; font-size: 1.5rem; }}
                 .badge {{ background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }}
-                .content-box {{ background: #0f172a; border-radius: 10px; padding: 1.25rem; margin: 1.5rem 0; line-height: 1.6; border: 1px solid #334155; color: #cbd5e1; white-space: pre-wrap; }}
-                .btn {{ display: inline-flex; align-items: center; gap: 0.5rem; background: #6366f1; color: white; text-decoration: none; padding: 0.75rem 1.25rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem; }}
+                .content-box {{ background: #0f172a; border-radius: 10px; padding: 1.25rem; margin: 1.5rem 0; line-height: 1.6; border: 1px solid #334155; color: #cbd5e1; white-space: pre-wrap; font-size: 0.95rem; }}
+                .btn {{ display: inline-flex; align-items: center; gap: 0.5rem; background: #6366f1; color: white; text-decoration: none; padding: 0.75rem 1.25rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; border: none; }}
                 .btn:hover {{ background: #4f46e5; }}
+                .btn-secondary {{ background: #334155; color: #f8fafc; }}
+                .btn-secondary:hover {{ background: #475569; }}
+                .upload-section {{ background: rgba(99, 102, 241, 0.08); border: 2px dashed #6366f1; border-radius: 12px; padding: 1.25rem; margin-top: 1.25rem; text-align: center; }}
             </style>
         </head>
         <body>
@@ -166,12 +171,22 @@ def download_resource(resource_id):
                 <span class="badge">{res.get('type', 'DOCUMENT')}</span>
                 <h2><i class="fa-solid fa-file-lines"></i> {res_name}</h2>
                 <p style="color: #94a3b8; font-size: 0.9rem;">
-                    This resource was saved with the following description & study notes:
+                    This resource was registered with the following notes & description:
                 </p>
                 <div class="content-box">{content_text or 'No description provided.'}</div>
-                <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <a href="javascript:window.history.back()" class="btn"><i class="fa-solid fa-arrow-left"></i> Back to Room</a>
-                    <span style="color: #64748b; font-size: 0.8rem;">💡 Please re-upload the PDF to enable in-browser binary preview.</span>
+                
+                <div class="upload-section">
+                    <p style="margin: 0 0 0.75rem 0; font-weight: 600; font-size: 0.9rem; color: #cbd5e1;">
+                        <i class="fa-solid fa-cloud-arrow-up" style="color: #6366f1;"></i> Attach / Re-upload PDF to view inline
+                    </p>
+                    <form action="/resources/attach/{res_id}" method="POST" enctype="multipart/form-data" style="display: flex; gap: 0.5rem; justify-content: center; align-items: center; flex-wrap: wrap;">
+                        <input type="file" name="file" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.zip" required style="font-size: 0.85rem; color: #94a3b8;">
+                        <button type="submit" class="btn" style="padding: 0.5rem 1rem; font-size: 0.85rem;"><i class="fa-solid fa-upload"></i> Save & View</button>
+                    </form>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 1.5rem;">
+                    <a href="/groups/{group_id}" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Back to Room</a>
                 </div>
             </div>
         </body>
@@ -181,3 +196,42 @@ def download_resource(resource_id):
     except Exception as exc:
         print(f"[Download Route Error]: {exc}")
         abort(404, description="Resource could not be loaded")
+
+
+@bp.route('/attach/<resource_id>', methods=['POST'])
+@login_required
+def attach_resource_file(resource_id):
+    """
+    Allows attaching or re-uploading the file for an existing study resource directly.
+    """
+    try:
+        uploaded_file = request.files.get('file')
+        if not uploaded_file or not uploaded_file.filename:
+            flash('No file selected.', 'warning')
+            return redirect(url_for('resources.download_resource', resource_id=resource_id))
+
+        filename = uploaded_file.filename.strip()
+        file_mimetype = uploaded_file.content_type or mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+
+        uploaded_file.seek(0)
+        file_bytes = uploaded_file.read()
+        file_b64 = base64.b64encode(file_bytes).decode('utf-8') if file_bytes else None
+
+        from app.db import mongo
+        if mongo.is_connected and mongo.db is not None:
+            mongo.db.resources.update_one(
+                {'_id': resource_id},
+                {'$set': {
+                    'filename': filename,
+                    'file_mimetype': file_mimetype,
+                    'file_data': file_b64,
+                    'file_url': url_for('resources.download_resource', resource_id=resource_id)
+                }}
+            )
+
+        flash('File attached successfully! Opening viewer...', 'success')
+        return redirect(url_for('resources.download_resource', resource_id=resource_id))
+
+    except Exception as e:
+        flash(f'Error attaching file: {e}', 'danger')
+        return redirect(url_for('resources.download_resource', resource_id=resource_id))
