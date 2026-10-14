@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: virtual-study-group
+    runtime: python
+    rootDir: Virtual-Study-Group-main
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MONGO_URI
+        sync: false
+      - key: MONGO_DBNAME
+        value: virtual_study_group
