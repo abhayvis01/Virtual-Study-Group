@@ -390,45 +390,67 @@
 
 <!-- TAB 8: Study Task Planner -->
 <div id="tasksTab" class="tab-pane">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-    <h3 style="font-weight: 700;"><i class="fa-solid fa-list-check" style="color: #f59e0b;"></i> Study Task Planner</h3>
-    <div style="display: flex; gap: 0.5rem;">
-      <input type="text" id="newTaskInput" class="form-control" placeholder="New Task Title..." style="width: 250px;">
-      <button onclick="addNewTask()" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> Add Task</button>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+    <div>
+      <h3 style="font-weight: 800; font-size: 1.25rem;"><i class="fa-solid fa-list-check" style="color: #f59e0b;"></i> Study Task Planner</h3>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0;">Organize, track progress, and manage study milestones</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center; width: 100%; max-width: 420px;">
+      <input type="text" id="newTaskInput" class="form-control" placeholder="New Task Title (press Enter)..." onkeypress="if(event.key === 'Enter') addNewTask()">
+      <button onclick="addNewTask()" class="btn btn-primary" style="white-space: nowrap;"><i class="fa-solid fa-plus"></i> Add Task</button>
     </div>
   </div>
 
   <div class="kanban-board">
     <div class="kanban-col">
-      <h4 style="font-weight: 700; color: #f59e0b; margin-bottom: 0.75rem;"><i class="fa-solid fa-circle"></i> To Do</h4>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+        <h4 style="font-weight: 700; color: #f59e0b; margin: 0;"><i class="fa-solid fa-circle"></i> To Do</h4>
+        <span class="badge" id="countTodo" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b; font-weight: 700;"></span>
+      </div>
       <div id="colTodo">
         {% for t in tasks if t.status == 'todo' %}
           <div class="kanban-card" id="task-card-{{ t._id }}">
-            <div style="font-weight: 600;">{{ t.title }}</div>
-            <button onclick="moveTask('{{ t._id }}', 'in_progress')" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem; width: 100%;">Start <i class="fa-solid fa-arrow-right"></i></button>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+              <div style="font-weight: 600; line-height: 1.4; word-break: break-word;">{{ t.title }}</div>
+              <button onclick="deleteTask('{{ t._id }}')" class="task-delete-btn" title="Delete Task"><i class="fa-regular fa-trash-can"></i></button>
+            </div>
+            <button onclick="moveTask('{{ t._id }}', 'in_progress')" class="btn btn-secondary btn-sm" style="margin-top: 0.75rem; width: 100%;">Start <i class="fa-solid fa-arrow-right"></i></button>
           </div>
         {% endfor %}
       </div>
     </div>
 
     <div class="kanban-col">
-      <h4 style="font-weight: 700; color: #3b82f6; margin-bottom: 0.75rem;"><i class="fa-solid fa-spinner"></i> In Progress</h4>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+        <h4 style="font-weight: 700; color: #3b82f6; margin: 0;"><i class="fa-solid fa-spinner"></i> In Progress</h4>
+        <span class="badge" id="countInProgress" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; font-weight: 700;"></span>
+      </div>
       <div id="colInProgress">
         {% for t in tasks if t.status == 'in_progress' %}
           <div class="kanban-card" id="task-card-{{ t._id }}">
-            <div style="font-weight: 600;">{{ t.title }}</div>
-            <button onclick="moveTask('{{ t._id }}', 'done')" class="btn btn-primary btn-sm" style="margin-top: 0.5rem; width: 100%;">Complete ✅</button>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+              <div style="font-weight: 600; line-height: 1.4; word-break: break-word;">{{ t.title }}</div>
+              <button onclick="deleteTask('{{ t._id }}')" class="task-delete-btn" title="Delete Task"><i class="fa-regular fa-trash-can"></i></button>
+            </div>
+            <button onclick="moveTask('{{ t._id }}', 'done')" class="btn btn-primary btn-sm" style="margin-top: 0.75rem; width: 100%;">Complete ✅</button>
           </div>
         {% endfor %}
       </div>
     </div>
 
     <div class="kanban-col">
-      <h4 style="font-weight: 700; color: #10b981; margin-bottom: 0.75rem;"><i class="fa-solid fa-check-circle"></i> Completed</h4>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+        <h4 style="font-weight: 700; color: #10b981; margin: 0;"><i class="fa-solid fa-check-circle"></i> Completed</h4>
+        <span class="badge" id="countDone" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 700;"></span>
+      </div>
       <div id="colDone">
         {% for t in tasks if t.status == 'done' %}
-          <div class="kanban-card" id="task-card-{{ t._id }}" style="opacity: 0.7;">
-            <div style="font-weight: 600; text-decoration: line-through;">{{ t.title }}</div>
+          <div class="kanban-card done-card" id="task-card-{{ t._id }}">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+              <div style="font-weight: 600; text-decoration: line-through; color: var(--text-muted); line-height: 1.4; word-break: break-word;">{{ t.title }}</div>
+              <button onclick="deleteTask('{{ t._id }}')" class="task-delete-btn" title="Remove Done Task"><i class="fa-regular fa-trash-can"></i></button>
+            </div>
+            <div style="font-size: 0.75rem; color: #10b981; font-weight: 600; margin-top: 0.5rem;"><i class="fa-solid fa-circle-check"></i> Done</div>
           </div>
         {% endfor %}
       </div>
@@ -821,8 +843,10 @@ Ask a study question or click any prompt above to receive a step-by-step academi
     else if (tabId === 'pollsTab') loadPolls();
   }
 
-  // Restore saved active tab on page load
+  // Restore saved active tab and initialize dynamic badges on page load
   document.addEventListener('DOMContentLoaded', () => {
+    updateTaskBadges();
+    loadPolls();
     const savedTab = sessionStorage.getItem('vsg_active_tab_' + groupId);
     if (savedTab && document.getElementById(savedTab)) {
       switchTab(savedTab);
@@ -1077,11 +1101,28 @@ Ask a study question or click any prompt above to receive a step-by-step academi
     .then(res => alert('Whiteboard saved to Cloud!'));
   }
 
-  // Study Task Planner JS (Seamless AJAX - No page refresh)
+  // Study Task Planner JS (Seamless AJAX with Real-time Column Badges and Removal)
+  function updateTaskBadges() {
+    const todoCount = document.querySelectorAll('#colTodo .kanban-card').length;
+    const inProgCount = document.querySelectorAll('#colInProgress .kanban-card').length;
+    const doneCount = document.querySelectorAll('#colDone .kanban-card').length;
+
+    const bTodo = document.getElementById('countTodo');
+    const bInProg = document.getElementById('countInProgress');
+    const bDone = document.getElementById('countDone');
+
+    if (bTodo) bTodo.innerText = todoCount;
+    if (bInProg) bInProg.innerText = inProgCount;
+    if (bDone) bDone.innerText = doneCount;
+  }
+
   function addNewTask() {
     const input = document.getElementById('newTaskInput');
     const title = input.value.trim();
-    if (!title) return;
+    if (!title) {
+      input.focus();
+      return;
+    }
 
     fetch('/api/tasks/add', {
       method: 'POST',
@@ -1096,9 +1137,22 @@ Ask a study question or click any prompt above to receive a step-by-step academi
         const div = document.createElement('div');
         div.className = 'kanban-card';
         div.id = 'task-card-' + res.task._id;
-        div.innerHTML = `<div style="font-weight: 600;">${res.task.title}</div><button onclick="moveTask('${res.task._id}', 'in_progress')" class="btn btn-secondary btn-sm" style="margin-top: 0.5rem; width: 100%;">Start <i class="fa-solid fa-arrow-right"></i></button>`;
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+            <div style="font-weight: 600; line-height: 1.4; word-break: break-word;">${res.task.title}</div>
+            <button onclick="deleteTask('${res.task._id}')" class="task-delete-btn" title="Delete Task"><i class="fa-regular fa-trash-can"></i></button>
+          </div>
+          <button onclick="moveTask('${res.task._id}', 'in_progress')" class="btn btn-secondary btn-sm" style="margin-top: 0.75rem; width: 100%;">Start <i class="fa-solid fa-arrow-right"></i></button>
+        `;
         col.appendChild(div);
+        updateTaskBadges();
+      } else {
+        alert(res.message || 'Error adding task.');
       }
+    })
+    .catch(err => {
+      console.error('Task add error:', err);
+      alert('Network error while creating task.');
     });
   }
 
@@ -1110,26 +1164,68 @@ Ask a study question or click any prompt above to receive a step-by-step academi
     })
     .then(r => r.json())
     .then(res => {
-      const elem = document.getElementById('task-card-' + taskId);
-      if (elem) {
+      if (res.status === 'success') {
+        const elem = document.getElementById('task-card-' + taskId);
+        if (!elem) return;
+        
+        const titleText = elem.querySelector('div[style*="font-weight: 600"]').innerText;
         elem.remove();
+
         if (newStatus === 'in_progress') {
           const col = document.getElementById('colInProgress');
           const div = document.createElement('div');
           div.className = 'kanban-card';
           div.id = 'task-card-' + taskId;
-          div.innerHTML = elem.innerHTML.replace("moveTask('" + taskId + "', 'in_progress')", "moveTask('" + taskId + "', 'done')").replace("Start <i class=\"fa-solid fa-arrow-right\"></i>", "Complete ✅");
+          div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+              <div style="font-weight: 600; line-height: 1.4; word-break: break-word;">${titleText}</div>
+              <button onclick="deleteTask('${taskId}')" class="task-delete-btn" title="Delete Task"><i class="fa-regular fa-trash-can"></i></button>
+            </div>
+            <button onclick="moveTask('${taskId}', 'done')" class="btn btn-primary btn-sm" style="margin-top: 0.75rem; width: 100%;">Complete ✅</button>
+          `;
           col.appendChild(div);
         } else if (newStatus === 'done') {
           const col = document.getElementById('colDone');
           const div = document.createElement('div');
-          div.className = 'kanban-card';
-          div.style.opacity = '0.7';
+          div.className = 'kanban-card done-card';
           div.id = 'task-card-' + taskId;
-          div.innerHTML = `<div style="font-weight: 600; text-decoration: line-through;">${elem.querySelector('div').innerText}</div>`;
+          div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+              <div style="font-weight: 600; text-decoration: line-through; color: var(--text-muted); line-height: 1.4; word-break: break-word;">${titleText}</div>
+              <button onclick="deleteTask('${taskId}')" class="task-delete-btn" title="Remove Done Task"><i class="fa-regular fa-trash-can"></i></button>
+            </div>
+            <div style="font-size: 0.75rem; color: #10b981; font-weight: 600; margin-top: 0.5rem;"><i class="fa-solid fa-circle-check"></i> Done</div>
+          `;
           col.appendChild(div);
         }
+        updateTaskBadges();
       }
+    })
+    .catch(err => {
+      console.error('Error updating task status:', err);
+    });
+  }
+
+  function deleteTask(taskId) {
+    if (!confirm('Remove this task?')) return;
+
+    fetch('/api/tasks/delete/' + taskId, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === 'success') {
+        const elem = document.getElementById('task-card-' + taskId);
+        if (elem) elem.remove();
+        updateTaskBadges();
+      } else {
+        alert(res.message || 'Error deleting task.');
+      }
+    })
+    .catch(err => {
+      console.error('Task delete error:', err);
+      alert('Network error while deleting task.');
     });
   }
 

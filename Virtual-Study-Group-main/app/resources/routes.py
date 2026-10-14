@@ -1,7 +1,8 @@
+import os
 import base64
 import io
 import mimetypes
-from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, abort
+from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file, abort, current_app, Response
 from flask_login import login_required, current_user
 from app.services.mongo_service import ResourceService, GroupService
 from app.services.firebase_service import FirebaseService
@@ -25,28 +26,27 @@ def add_resource(group_id):
             file_b64 = None
             file_mimetype = "application/octet-stream"
 
-            if form.file.data and form.file.data.filename:
-                file_storage = form.file.data
-                filename = file_storage.filename
-                file_mimetype = file_storage.content_type or mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+            # Inspect request.files first, then form.file.data
+            uploaded_file = request.files.get('file') or form.file.data
+            if uploaded_file and hasattr(uploaded_file, 'filename') and uploaded_file.filename:
+                filename = uploaded_file.filename.strip()
+                file_mimetype = uploaded_file.content_type or mimetypes.guess_type(filename)[0] or 'application/octet-stream'
 
                 # 1. Read file bytes safely (up to 15 MB)
                 try:
-                    file_storage.seek(0)
-                    file_bytes = file_storage.read()
+                    uploaded_file.seek(0)
+                    file_bytes = uploaded_file.read()
                     if file_bytes and len(file_bytes) < 15 * 1024 * 1024:
                         file_b64 = base64.b64encode(file_bytes).decode('utf-8')
-                    file_storage.seek(0)
+                        print(f"[Resource Upload]: Read {len(file_bytes)} bytes for '{filename}'")
+                    uploaded_file.seek(0)
                 except Exception as read_err:
                     print(f"[Resource Read Error]: {read_err}")
-                    file_b64 = None
 
                 # 2. Upload via Firebase Storage if available (or local disk)
                 try:
-                    _, external_url = FirebaseService.upload_file(file_storage, folder=f"resources/{group_id}")
-                    if external_url and external_url.startswith('http'):
-                        file_url = external_url
-                    elif external_url:
+                    _, external_url = FirebaseService.upload_file(uploaded_file, folder=f"resources/{group_id}")
+                    if external_url:
                         file_url = external_url
                 except Exception as upl_err:
                     print(f"[Upload Fallback Notice]: {upl_err}")
@@ -64,7 +64,7 @@ def add_resource(group_id):
                 file_mimetype=file_mimetype
             )
 
-            # 4. Always set file_url to our guaranteed permanent streaming endpoint for uploaded files
+            # 4. Always ensure file_url routes through our permanent streaming endpoint if a file was attached
             if filename:
                 direct_url = url_for('resources.download_resource', resource_id=res_doc['_id'])
                 from app.db import mongo
@@ -97,15 +97,24 @@ def download_resource(resource_id):
         # 1. If binary/base64 data exists in MongoDB, stream it directly
         if res.get('file_data'):
             try:
-                file_bytes = base64.b64decode(res['file_data'])
+                raw_b64 = res['file_data']
+                if isinstance(raw_b64, str):
+                    file_bytes = base64.b64decode(raw_b64)
+                else:
+                    file_bytes = bytes(raw_b64)
+                
                 filename = res.get('filename') or f"{res.get('name', 'resource')}.pdf"
                 mimetype = res.get('file_mimetype') or mimetypes.guess_type(filename)[0] or 'application/pdf'
-                return send_file(
+                
+                response = send_file(
                     io.BytesIO(file_bytes),
                     mimetype=mimetype,
                     as_attachment=False,
                     download_name=filename
                 )
+                response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
+                response.headers['Content-Type'] = mimetype
+                return response
             except Exception as e:
                 print(f"[Resource Serve Error]: {e}")
 
@@ -117,15 +126,17 @@ def download_resource(resource_id):
             if os.path.exists(full_path):
                 filename = res.get('filename') or os.path.basename(full_path)
                 mimetype = res.get('file_mimetype') or mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-                return send_file(
+                response = send_file(
                     full_path,
                     mimetype=mimetype,
                     as_attachment=False,
                     download_name=filename
                 )
+                response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
+                return response
 
-        # 3. If external HTTP/HTTPS URL exists, redirect to it
-        if file_url and file_url.startswith('http'):
+        # 3. If external HTTP/HTTPS URL exists and is not our own endpoint, redirect to it
+        if file_url and file_url.startswith('http') and '/resources/download/' not in file_url:
             return redirect(file_url)
 
         # 4. If neither binary data nor file exists on server (e.g. legacy upload prior to cloud persistence),
