@@ -211,7 +211,7 @@ class GroupService:
 
 class ResourceService:
     @staticmethod
-    def add_resource(name, rtype, content, file_url, group_id, uploader_id):
+    def add_resource(name, rtype, content, file_url, group_id, uploader_id, filename='', file_data=None, file_mimetype=''):
         res_id = str(uuid.uuid4())
         doc = {
             '_id': res_id,
@@ -220,6 +220,9 @@ class ResourceService:
             'type': rtype,
             'content': content,
             'file_url': file_url or '',
+            'filename': filename or '',
+            'file_data': file_data,  # base64 string or binary stored directly in MongoDB
+            'file_mimetype': file_mimetype or 'application/octet-stream',
             'group_id': str(group_id),
             'uploaded_by': str(uploader_id),
             'created_at': datetime.datetime.utcnow()
@@ -234,8 +237,19 @@ class ResourceService:
     def get_group_resources(group_id):
         gid = str(group_id)
         if mongo.is_connected and mongo.db is not None:
-            return list(mongo.db.resources.find({'group_id': gid}).sort('created_at', -1))
-        return [r for r in _MEMORY_DB['resources'].values() if r.get('group_id') == gid]
+            # Return list of resources (excluding large file_data payload in listing for speed)
+            return list(mongo.db.resources.find({'group_id': gid}, {'file_data': 0}).sort('created_at', -1))
+        return [
+            {k: v for k, v in r.items() if k != 'file_data'}
+            for r in _MEMORY_DB['resources'].values() if r.get('group_id') == gid
+        ]
+
+    @staticmethod
+    def get_resource_by_id(resource_id):
+        rid = str(resource_id)
+        if mongo.is_connected and mongo.db is not None:
+            return mongo.db.resources.find_one({'_id': rid})
+        return _MEMORY_DB['resources'].get(rid)
 
     @staticmethod
     def delete_resource(resource_id):

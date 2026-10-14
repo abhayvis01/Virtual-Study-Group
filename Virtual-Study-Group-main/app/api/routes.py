@@ -13,23 +13,28 @@ from app.services.mongo_service import (
 
 bp = Blueprint('api', __name__)
 
-def _extract_document_text(file_path_or_url, max_chars=8000):
+def _extract_document_text(file_path_or_url, max_chars=8000, raw_data=None):
     """
     Extracts readable text from PDFs, Word docs (.docx), text files, or URLs.
-    Handles both local uploads and remote HTTP/HTTPS links (e.g. Firebase storage).
+    Handles raw base64 data, local uploads, and remote HTTP/HTTPS links.
     """
-    if not file_path_or_url:
-        return ""
     try:
         raw_bytes = None
         ext = file_path_or_url.split('?')[0].rsplit('.', 1)[-1].lower() if '.' in file_path_or_url else ''
 
-        if file_path_or_url.startswith('http://') or file_path_or_url.startswith('https://'):
+        if raw_data:
+            import base64
+            if isinstance(raw_data, str):
+                raw_bytes = io.BytesIO(base64.b64decode(raw_data))
+            elif isinstance(raw_data, (bytes, bytearray)):
+                raw_bytes = io.BytesIO(raw_data)
+
+        elif file_path_or_url.startswith('http://') or file_path_or_url.startswith('https://'):
             import requests as req
             resp = req.get(file_path_or_url, timeout=10)
             if resp.status_code == 200:
                 raw_bytes = io.BytesIO(resp.content)
-        else:
+        elif file_path_or_url:
             local_rel = file_path_or_url.lstrip('/')
             full_path = os.path.join(current_app.root_path, local_rel.replace('static/', 'static' + os.sep))
             if os.path.exists(full_path):
@@ -1009,8 +1014,13 @@ def ai_ask():
 
             # Extract deep inside content of the document (PDF, Word, TXT, etc.)
             file_extra = ""
-            if r_file:
-                doc_text = _extract_document_text(r_file, max_chars=8000)
+            full_res = None
+            if res.get('_id'):
+                full_res = ResourceService.get_resource_by_id(res['_id'])
+            raw_b64 = full_res.get('file_data') if full_res else None
+
+            if raw_b64 or r_file:
+                doc_text = _extract_document_text(r_file or full_res.get('filename', 'doc.pdf'), max_chars=8000, raw_data=raw_b64)
                 if doc_text:
                     file_extra = f"\n[Full Document Text Extract]:\n{doc_text}"
 
