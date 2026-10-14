@@ -332,6 +332,15 @@ class TaskService:
             if tid in _MEMORY_DB['tasks']:
                 _MEMORY_DB['tasks'][tid]['status'] = status
 
+    @staticmethod
+    def delete_task(task_id):
+        tid = str(task_id)
+        if mongo.is_connected and mongo.db is not None:
+            res = mongo.db.tasks.delete_one({'_id': tid})
+            return res.deleted_count > 0
+        else:
+            return _MEMORY_DB['tasks'].pop(tid, None) is not None
+
 
 class WhiteboardService:
     @staticmethod

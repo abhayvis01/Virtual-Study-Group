@@ -327,6 +327,20 @@ def update_task():
     TaskService.update_task_status(task_id, status)
     return jsonify({'status': 'success'})
 
+@bp.route('/tasks/get/<group_id>', methods=['GET'])
+@login_required
+def get_tasks(group_id):
+    tasks = TaskService.get_group_tasks(group_id)
+    return jsonify({'status': 'success', 'tasks': tasks})
+
+@bp.route('/tasks/delete/<task_id>', methods=['POST', 'DELETE'])
+@login_required
+def delete_task(task_id):
+    success = TaskService.delete_task(task_id)
+    if success:
+        return jsonify({'status': 'success', 'message': 'Task deleted successfully'})
+    return jsonify({'status': 'error', 'message': 'Task not found or could not be deleted'}), 404
+
 # --- Collaborative Whiteboard API ---
 @bp.route('/whiteboard/get/<group_id>', methods=['GET'])
 @login_required

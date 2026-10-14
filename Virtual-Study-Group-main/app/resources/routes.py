@@ -64,15 +64,13 @@ def add_resource(group_id):
                 file_mimetype=file_mimetype
             )
 
-            # 4. Generate guaranteed permanent download URL
-            if file_b64 or file_url:
+            # 4. Always set file_url to our guaranteed permanent streaming endpoint for uploaded files
+            if filename:
                 direct_url = url_for('resources.download_resource', resource_id=res_doc['_id'])
-                # If we don't have an external HTTPS URL, route through our persistent endpoint
-                if not (file_url and file_url.startswith('http')):
-                    from app.db import mongo
-                    if mongo.is_connected and mongo.db is not None:
-                        mongo.db.resources.update_one({'_id': res_doc['_id']}, {'$set': {'file_url': direct_url}})
-                    res_doc['file_url'] = direct_url
+                from app.db import mongo
+                if mongo.is_connected and mongo.db is not None:
+                    mongo.db.resources.update_one({'_id': res_doc['_id']}, {'$set': {'file_url': direct_url}})
+                res_doc['file_url'] = direct_url
 
             flash('Study resource uploaded and saved successfully!', 'success')
             return redirect(url_for('groups.view_group', group_id=group_id))
@@ -130,7 +128,45 @@ def download_resource(resource_id):
         if file_url and file_url.startswith('http'):
             return redirect(file_url)
 
-        abort(404, description="File content unavailable on server")
+        # 4. If neither binary data nor file exists on server (e.g. legacy upload prior to cloud persistence),
+        # render a graceful study note viewer page instead of throwing raw 404
+        content_text = res.get('content', '')
+        res_name = res.get('name', 'Study Document')
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>{res_name} - Virtual Study Group</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+            <style>
+                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 2rem; display: flex; justify-content: center; align-items: center; min-height: 80vh; margin: 0; }}
+                .card {{ background: #1e293b; border: 1px solid #334155; border-radius: 16px; padding: 2.5rem; max-width: 600px; width: 100%; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }}
+                h2 {{ margin-top: 0; color: #38bdf8; display: flex; align-items: center; gap: 0.75rem; font-size: 1.5rem; }}
+                .badge {{ background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }}
+                .content-box {{ background: #0f172a; border-radius: 10px; padding: 1.25rem; margin: 1.5rem 0; line-height: 1.6; border: 1px solid #334155; color: #cbd5e1; white-space: pre-wrap; }}
+                .btn {{ display: inline-flex; align-items: center; gap: 0.5rem; background: #6366f1; color: white; text-decoration: none; padding: 0.75rem 1.25rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem; }}
+                .btn:hover {{ background: #4f46e5; }}
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <span class="badge">{res.get('type', 'DOCUMENT')}</span>
+                <h2><i class="fa-solid fa-file-lines"></i> {res_name}</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem;">
+                    This resource was saved with the following description & study notes:
+                </p>
+                <div class="content-box">{content_text or 'No description provided.'}</div>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <a href="javascript:window.history.back()" class="btn"><i class="fa-solid fa-arrow-left"></i> Back to Room</a>
+                    <span style="color: #64748b; font-size: 0.8rem;">💡 Please re-upload the PDF to enable in-browser binary preview.</span>
+                </div>
+            </div>
+        </body>
+        </html>
+        """, 200, {'Content-Type': 'text/html; charset=utf-8'}
+
     except Exception as exc:
         print(f"[Download Route Error]: {exc}")
         abort(404, description="Resource could not be loaded")
