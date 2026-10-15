@@ -13,21 +13,29 @@ from app.services.mongo_service import (
 
 bp = Blueprint('api', __name__)
 
-def _extract_document_text(file_path_or_url, max_chars=8000, raw_data=None):
+def _extract_document_text(file_path_or_url, max_chars=8000, raw_data=None, filename_hint=''):
     """
     Extracts readable text from PDFs, Word docs (.docx), text files, or URLs.
-    Handles raw base64 data, local uploads, and remote HTTP/HTTPS links.
+    Handles bson.Binary, raw bytes, base64 strings, local uploads, and remote HTTP/HTTPS links.
+    filename_hint: original filename (e.g. 'notes.pdf') used to detect the file type.
     """
     try:
         raw_bytes = None
-        ext = file_path_or_url.split('?')[0].rsplit('.', 1)[-1].lower() if '.' in file_path_or_url else ''
+        # Detect extension from filename_hint first, then fall back to URL
+        if filename_hint and '.' in filename_hint:
+            ext = filename_hint.rsplit('.', 1)[-1].lower()
+        elif '.' in file_path_or_url:
+            ext = file_path_or_url.split('?')[0].rsplit('.', 1)[-1].lower()
+        else:
+            ext = 'pdf'  # default to PDF for uploaded documents
 
         if raw_data:
             import base64
             if isinstance(raw_data, str):
                 raw_bytes = io.BytesIO(base64.b64decode(raw_data))
             elif isinstance(raw_data, (bytes, bytearray)):
-                raw_bytes = io.BytesIO(raw_data)
+                # Handles both bson.Binary and plain bytes
+                raw_bytes = io.BytesIO(bytes(raw_data))
 
         elif file_path_or_url.startswith('http://') or file_path_or_url.startswith('https://'):
             import requests as req
@@ -1070,10 +1078,16 @@ def ai_ask():
             full_res = None
             if res.get('_id'):
                 full_res = ResourceService.get_resource_by_id(res['_id'])
-            raw_b64 = full_res.get('file_data') if full_res else None
+            raw_file_data = full_res.get('file_data') if full_res else None
+            original_filename = (full_res.get('filename', '') if full_res else '') or ''
 
-            if raw_b64 or r_file:
-                doc_text = _extract_document_text(r_file or full_res.get('filename', 'doc.pdf'), max_chars=8000, raw_data=raw_b64)
+            if raw_file_data or r_file:
+                doc_text = _extract_document_text(
+                    r_file or original_filename or 'doc.pdf',
+                    max_chars=8000,
+                    raw_data=raw_file_data,
+                    filename_hint=original_filename
+                )
                 if doc_text:
                     file_extra = f"\n[Full Document Text Extract]:\n{doc_text}"
 

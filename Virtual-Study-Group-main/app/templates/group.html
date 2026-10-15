@@ -555,7 +555,8 @@
     <div class="grid-3">
       {% for r in resources %}
         {% set is_link = (r.type == 'link') or (r.content and (r.content.startswith('http://') or r.content.startswith('https://'))) %}
-        {% set resource_target = r.file_url if (r.file_url and r.file_url.startswith('http')) else (url_for('resources.download_resource', resource_id=r._id) if (r.file_url or r.get('filename')) else (r.content if is_link else '')) %}
+        {% set has_file = (r.file_url and r.file_url|length > 0) or (r.filename is defined and r.filename and r.filename|length > 0) %}
+        {% set resource_target = url_for('resources.download_resource', resource_id=r._id) if has_file else (r.content if is_link else '') %}
         {% set is_yt = ('youtube.com' in r.content or 'youtu.be' in r.content) if r.content else false %}
         <div class="card card-hoverable" 
              {% if resource_target %}
