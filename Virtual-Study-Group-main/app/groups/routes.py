@@ -57,10 +57,12 @@ def view_group(group_id):
         flash('Study group not found.', 'warning')
         return redirect(url_for('main.dashboard'))
     
-    # Auto-add user to members if accessing public room
-    if str(current_user.id) not in group.get('members', []):
-        GroupService.add_member(group_id, current_user.id)
-        group = GroupService.get_by_id(group_id)
+    # Restrict room access: only members and the creator can view the room
+    is_member = str(current_user.id) in [str(m) for m in group.get('members', [])]
+    is_creator = str(group.get('created_by')) == str(current_user.id)
+    if not is_member and not is_creator:
+        flash(f'Access Denied: You must enter the valid access code to join "{group["name"]}".', 'danger')
+        return redirect(url_for('main.dashboard'))
 
     resources = ResourceService.get_group_resources(group_id)
     messages = ChatService.get_group_messages(group_id)
